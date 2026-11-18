@@ -44,7 +44,7 @@ if ! PACKAGES=$(su -c pm list packages -3 </dev/null); then
     echo "! pm list packages failed, target.txt left unchanged"
     exit 1
 fi
-echo "$PACKAGES" | awk -F: '{print $2}' | grep -Ev "$EXCLUDE" > /data/adb/tricky_store/target.txt.tmp
+printf '%s' "$PACKAGES" | awk -F: '{print $2}' | grep -Ev "$EXCLUDE" > /data/adb/tricky_store/target.txt.tmp
 
 # Add additional apps to the target file if they are not already present
 for app in $ADDITION; do

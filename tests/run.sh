@@ -221,7 +221,7 @@ check "action.sh no WebUI app: no download, no pm install" [ "$(grep -c '^curl\|
 # lite script: target.txt is replaced only when pm list packages succeeded
 LB="$W/litebin"; mkdir -p "$LB"
 printf '#!/bin/sh\n[ "$1" = -c ] && shift\nexec "$@"\n' > "$LB/su"
-printf '#!/bin/sh\n[ -n "$PM_FAIL" ] && { echo "Error: pm down" >&2; exit 1; }\nprintf "package:com.example.one\\npackage:com.miui.example\\npackage:com.example.two\\n"\n' > "$LB/pm"
+printf '#!/bin/sh\n[ -n "$PM_FAIL" ] && { echo "Error: pm down" >&2; exit 1; }\n[ -n "$PM_EMPTY" ] && exit 0\nprintf "package:com.example.one\\npackage:com.miui.example\\npackage:com.example.two\\n"\n' > "$LB/pm"
 chmod +x "$LB/su" "$LB/pm"
 reset_root
 rewrite "$ROOT/lite-script_only/UpdateTargetList.sh" "$W/lite.sh"
@@ -234,6 +234,8 @@ check "lite script: no temp file left after pm failure" [ ! -e "$TT.tmp" ]
 check "lite script: target.txt = user apps minus excludes plus additions" \
     [ "$(tr '\n' ' ' < "$TT")" = "com.example.one com.example.two com.google.android.gms com.google.android.gsf com.android.vending io.github.vvb2060.keyattestation io.github.vvb2060.mahoshojo icu.nullptr.nativetest " ]
 check "lite script: no temp file left" [ ! -e "$TT.tmp" ]
+(export PATH="$LB:$PATH" PM_EMPTY=1; run_t 20 sh "$W/lite.sh") > "$W/lite.out" 2>&1
+check "lite script: no user apps -> additions only, no blank line" [ "$(grep -c '^$' "$TT")" = 0 -a "$(wc -l < "$TT")" -eq 6 ]
 
 # ---------------------------------------------------------------- WebUI sources
 SRC="$ROOT/webui/src"
