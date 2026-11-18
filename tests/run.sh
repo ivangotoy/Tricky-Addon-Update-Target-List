@@ -185,6 +185,20 @@ ln -s "$M/webui" "$TEES/webroot"; ln -s "$M/action.sh" "$TEES/action.sh"
 (export PATH="$STUBS:$PATH"; run_t 20 sh "$M/uninstall.sh") > "$W/un.out" 2>&1
 check "uninstall.sh: TEESimulator webroot/action.sh symlinks removed" [ ! -L "$TEES/webroot" -a ! -L "$TEES/action.sh" ]
 
+# action.sh (Magisk): without a WebUI app it opens the releases page, never pm-installs a downloaded APK
+AB="$W/actbin"; mkdir -p "$AB"
+for c in pm am curl wget busybox ping sleep; do
+    printf '#!/bin/sh\necho "%s $*" >> "%s"\n[ "%s" = pm ] && exit 1\nexit 0\n' "$c" "$LOG" "$c" > "$AB/$c"
+done
+chmod +x "$AB"/*
+reset_root
+mkdir -p "$FAKE/data/adb/modules/tricky_store"
+fake_module "$M"
+(export PATH="$AB:$PATH"; run_t 20 sh "$M/action.sh") > "$W/action.out" 2>&1
+check "action.sh no WebUI app: opens the KSUWebUIStandalone releases page" \
+    grep -qF 'am start -a android.intent.action.VIEW -d https://github.com/KOWX712/KsuWebUIStandalone/releases' "$LOG"
+check "action.sh no WebUI app: no download, no pm install" [ "$(grep -c '^curl\|^wget\|^busybox wget\|^pm install' "$LOG")" = 0 ]
+
 # lite script: target.txt is replaced only when pm list packages succeeded
 LB="$W/litebin"; mkdir -p "$LB"
 printf '#!/bin/sh\n[ "$1" = -c ] && shift\nexec "$@"\n' > "$LB/su"

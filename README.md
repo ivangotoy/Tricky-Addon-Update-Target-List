@@ -28,7 +28,7 @@ Install any of the following:
 
 - Action button to open WebUI
 - Support [KSUWebUIStandalone](https://github.com/KOWX712/KsuWebUIStandalone) and [WebUI X](https://github.com/MMRLApp/WebUI-X-Portable)
-- Automatic KSUWebUIStandalone install if none of them are installed.
+- Opens the KSUWebUIStandalone releases page if none of them are installed.
 
 ## Features
 
