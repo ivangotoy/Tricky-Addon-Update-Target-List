@@ -174,6 +174,9 @@ check "keybox writers make no .bak copy" [ "$(cat "$SRC/keybox/keybox.ts" "$SRC/
 # would run the following lines as root shell commands)
 check "shellFile.ts picks a here-doc delimiter absent from the data" grep -qF "while (data.includes(eof)) eof += '_'" "$SRC/file/shellFile.ts"
 check "shellFile.ts has no fixed FileEOF delimiter" [ "$(grep -c "<< 'FileEOF'" "$SRC/file/shellFile.ts")" = 0 ]
+# KsuIo.write: the tmp file replaces the target only after write, flush and close succeeded
+check "ksuIo.ts write() renames tmp onto the target" grep -qF 'tmpFile.renameTo(path)' "$SRC/file/ksuIo.ts"
+check "ksuIo.ts write() renames only a complete tmp file" grep -qF 'if (complete && !tmpFile.renameTo(path))' "$SRC/file/ksuIo.ts"
 
 echo "passed $pass failed $fail skipped $skip"
 [ "$fail" = 0 ]

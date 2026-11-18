@@ -41,6 +41,7 @@ export class KsuIo extends File {
     const id = stream.open(tmpPath, false)
     if (!id) throw new Error(`File.write failed to open: ${tmpPath}`)
     const bytes = new TextEncoder().encode(`${data.trim()}\n`)
+    let complete = false
     try {
       for (let offset = 0; offset < bytes.length; offset += 32768) {
         const chunk = bytes.subarray(offset, offset + 32768)
@@ -49,13 +50,14 @@ export class KsuIo extends File {
         if (!stream.write(id, btoa(binary))) throw new Error(`File.write failed: ${tmpPath}`)
       }
       if (!stream.flush(id)) throw new Error(`File.write failed to flush: ${tmpPath}`)
+      complete = true
     } finally {
       try {
         if (!stream.close(id)) throw new Error(`File.write failed to close: ${tmpPath}`)
       } finally {
         const tmpFile = io.File(tmpPath)
         try {
-          if (!tmpFile.renameTo(path)) throw new Error(`File.write failed to rename: ${tmpPath} -> ${path}`)
+          if (complete && !tmpFile.renameTo(path)) throw new Error(`File.write failed to rename: ${tmpPath} -> ${path}`)
         } finally {
           if (tmpFile.exists()) {
             await this.delete(tmpPath).catch(() => {})
