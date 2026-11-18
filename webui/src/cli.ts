@@ -3,6 +3,14 @@ import { file } from './file'
 import { MOD_ID, OMK_MOD_ID, TEES_MOD_ID, TS_MOD_ID } from './constant'
 import { isDev } from './utils/dev'
 
+// ksu.spawn hosts (KernelSU, KernelSU Next, WebUI X) join the args into one root shell line without quoting:
+// pass only args whose characters reach the command unchanged (no shell metacharacters, globs or braces)
+const SPAWN_ARG = /^[A-Za-z0-9._:/@=+,%][A-Za-z0-9._~:/@=+,%-]*$/
+const assertSpawnArgs = (args: string[]) => {
+  const bad = args.find(arg => !SPAWN_ARG.test(arg))
+  if (bad !== undefined) throw new Error(`unsafe spawn argument: ${bad}`)
+}
+
 export class Cli {
   static #basePathPromise: Promise<string> | null = null
   static #managerPromise: Promise<string> | null = null
@@ -94,6 +102,7 @@ export class Cli {
   }
 
   async downloadFile(url: string, destPath: string): Promise<void> {
+    assertSpawnArgs([url, destPath])
     const managerPath = await this.getManagerPath()
     return new Promise((resolve, reject) => {
       const tryCurl = () => {
@@ -138,6 +147,7 @@ export class Cli {
     const basePath = await this.getBasePath()
     const manager = await this.getManager()
     const managerPath = await this.getManagerPath()
+    assertSpawnArgs([module])
 
     if (option == 'uninstall') {
       if (manager == 'APATCH' || manager == 'KSU') await file.copy(`${basePath}/common/update/module.prop`, `${basePath}/module.prop`).catch(() => {})
@@ -231,6 +241,11 @@ export class Cli {
       ]
     }
     const basePath = await this.getBasePath()
+    try {
+      assertSpawnArgs([`${basePath}/common/get_extra.sh`])
+    } catch {
+      return []
+    }
     return new Promise((resolve) => {
       let stdout = ''
       const proc = spawn('sh', [`${basePath}/common/get_extra.sh`, '--xposed'])

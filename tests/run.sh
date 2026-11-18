@@ -282,6 +282,22 @@ check "ksuIo.ts creates the tmp file mode 600 before writing for ownerOnly" grep
 check "keybox.ts writes keybox.xml ownerOnly" grep -qF 'file.write(this.keyboxPath, content, true)' "$SRC/keybox/keybox.ts"
 check "custom.ts writes the downloaded keybox input ownerOnly" grep -qF 'file.write(input, data, true)' "$SRC/keybox/custom.ts"
 check "cli.ts transformFile output created under umask 077" grep -qF 'exec(`umask 077; (${command}) < ${quote(src)} > ${quote(dst)}`)' "$SRC/cli.ts"
+# ksu.spawn hosts (KernelSU, KernelSU Next, WebUI X) join args into one root shell line unquoted:
+# cli.ts only passes args made of characters that arrive unchanged (probe: shell metachars, globs, braces)
+RE=$(sed -n 's|^const SPAWN_ARG = /\(.*\)/$|\1|p' "$SRC/cli.ts")
+check "cli.ts defines SPAWN_ARG" [ -n "$RE" ]
+spawn_ok() { [ -n "$RE" ] && printf '%s\n' "$1" | grep -Eq "$RE"; }
+ZIPURL=$(sed -n 's/^ *"zipUrl": "\(.*\)",*$/\1/p' "$ROOT/.forgejo/update.json")
+for a in "$ZIPURL" "https://gh.sevencdn.com/$ZIPURL" /data/adb/modules/.TA_utl/common/tmp/module.zip \
+         /data/adb/modules/TA_utl/common/get_extra.sh TA_utl https://forge.example.invalid/owner/repo/releases/download/v1.0-ci1/Mod-v1.0-ci1.zip; do
+    check "SPAWN_ARG accepts $a" spawn_ok "$a"
+done
+for c in '&' ';' '$' '`' "'" '"' '(' ')' '<' '>' '|' ' ' '\' '*' '?' '[' ']' '{' '}'; do
+    check "SPAWN_ARG rejects [$c]" sh -c '! printf "%s\n" "$2" | grep -Eq "$1"' sh "$RE" "https://x.invalid/a${c}b"
+done
+check "SPAWN_ARG rejects a leading ~, # or -" sh -c '! printf "~/x\n#x\n-x\n" | grep -Eq "$1"' sh "$RE"
+check "cli.ts checks spawn args in downloadFile, manageModule and getXposedList" \
+    [ "$(grep -c 'assertSpawnArgs(\[' "$SRC/cli.ts")" = 3 ]
 
 echo "passed $pass failed $fail skipped $skip"
 [ "$fail" = 0 ]
