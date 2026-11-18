@@ -208,6 +208,9 @@ check "file_selector.ts single-quotes paths in exec (cd, cat)" \
 check "file_selector.ts has no double-quoted path in exec" [ "$(grep -c '"\${path}"' "$FS")" = 0 ]
 check "file_selector.ts escapes names in the list and the path bar" \
     [ "$(grep -c '<span>\${escapeHtml(item.name)}</span>' "$FS")" = 1 -a "$(grep -c 'data-path="\${escapeHtml(fullPath)}">\${escapeHtml(segment)}<' "$FS")" = 1 ]
+# WebUI uninstall restores module.prop / the Magisk remnant from common/update (customize.sh, update.ts)
+check "cli.ts uninstall copies from common/update (KSU, APatch, Magisk)" [ "$(grep -c '\${basePath}/common/update' "$SRC/cli.ts")" = 3 ]
+check "cli.ts has no \${basePath}/update path" [ "$(grep -c '\${basePath}/update' "$SRC/cli.ts")" = 0 ]
 
 echo "passed $pass failed $fail skipped $skip"
 [ "$fail" = 0 ]

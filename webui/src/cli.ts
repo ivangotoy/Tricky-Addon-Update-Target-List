@@ -146,15 +146,15 @@ export class Cli {
 
       switch (manager) {
         case 'APATCH':
-          if (option == 'uninstall') file.copy(`${basePath}/update/module.prop`, `${basePath}/module.prop`)
+          if (option == 'uninstall') file.copy(`${basePath}/common/update/module.prop`, `${basePath}/module.prop`)
           cmd = ['apd', ['module', option, module]]
           break
         case 'KSU':
-          if (option == 'uninstall') file.copy(`${basePath}/update/module.prop`, `${basePath}/module.prop`)
+          if (option == 'uninstall') file.copy(`${basePath}/common/update/module.prop`, `${basePath}/module.prop`)
           cmd = ['ksud', ['module', option, module]]
           break
         case 'MAGISK':
-          if (option == 'uninstall') file.copy(`${basePath}/update`, `/data/adb/modules/${MOD_ID}`)
+          if (option == 'uninstall') file.copy(`${basePath}/common/update`, `/data/adb/modules/${MOD_ID}`)
           cmd = ['magisk', [`--${option}-module`, module]]
           break
         default:
