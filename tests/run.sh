@@ -180,6 +180,10 @@ check "ksuIo.ts write() renames only a complete tmp file" grep -qF 'if (complete
 # custom keybox script: the shell redirect must not truncate keybox.xml before the script ran
 check "custom.ts transforms into a tmp output" grep -qF 'transformFile(input, output, script)' "$SRC/keybox/custom.ts"
 check "custom.ts never redirects a script into keybox.xml" [ "$(grep -c 'transformFile([^)]*keyboxPath' "$SRC/keybox/custom.ts")" = 0 ]
+# app labels are chosen by whoever ships the app: never raw HTML in the root WebUI
+check "app_list.ts escapes the label in the card (alt + name) and the policy dialog" \
+    [ "$(grep -c 'escapeHtml(entry.appName)' "$SRC/app_list/app_list.ts")" = 2 -a "$(grep -c 'escapeHtml(appName)' "$SRC/app_list/app_list.ts")" = 1 ]
+check "app_list.ts has no raw label in HTML" [ "$(grep -c '\${entry.appName}\|`\${appName}' "$SRC/app_list/app_list.ts")" = 0 ]
 
 echo "passed $pass failed $fail skipped $skip"
 [ "$fail" = 0 ]
