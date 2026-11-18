@@ -90,7 +90,7 @@ export class FileSelector {
     this.#currentPath = this.#currentPath.split('/').slice(0, -1).join('/')
     if (this.#currentPath === '') this.#currentPath = '/storage/emulated/0'
     if (this.#currentPathEl) {
-      this.#currentPathEl.innerHTML = this.#currentPath.split('/').filter(Boolean).join('<span class="separator">›</span>')
+      this.#currentPathEl.innerHTML = this.#currentPath.split('/').filter(Boolean).map(escapeHtml).join('<span class="separator">›</span>')
       this.#currentPathEl.scrollTo({
         left: this.#currentPathEl.scrollWidth,
         behavior: 'smooth',
@@ -139,7 +139,7 @@ export class FileSelector {
     this.#dialog?.show()
 
     if (this.#currentPathEl) {
-      this.#currentPathEl.innerHTML = this.#currentPath.split('/').filter(Boolean).join('<span class="separator">›</span>')
+      this.#currentPathEl.innerHTML = this.#currentPath.split('/').filter(Boolean).map(escapeHtml).join('<span class="separator">›</span>')
       this.#currentPathEl.scrollTo({
         left: this.#currentPathEl.scrollWidth,
         behavior: 'smooth',

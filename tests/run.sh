@@ -211,6 +211,8 @@ check "file_selector.ts escapes names in the list and the path bar" \
 # WebUI uninstall restores module.prop / the Magisk remnant from common/update (customize.sh, update.ts)
 check "cli.ts uninstall copies from common/update (KSU, APatch, Magisk)" [ "$(grep -c '\${basePath}/common/update' "$SRC/cli.ts")" = 3 ]
 check "cli.ts has no \${basePath}/update path" [ "$(grep -c '\${basePath}/update' "$SRC/cli.ts")" = 0 ]
+check "file_selector.ts escapes path segments on back navigation and on open" \
+    [ "$(grep -c "filter(Boolean).map(escapeHtml).join('<span" "$FS")" = 2 -a "$(grep -c "filter(Boolean).join('<span" "$FS")" = 0 ]
 
 echo "passed $pass failed $fail skipped $skip"
 [ "$fail" = 0 ]
