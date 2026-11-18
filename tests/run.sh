@@ -165,5 +165,11 @@ check "uninstall.sh: TS webroot/action.sh symlinks removed" [ ! -L "$TS/webroot"
 check "uninstall.sh: boot_hash, hidden dir, sdcard flag removed" \
     [ ! -e "$FAKE/data/adb/boot_hash" -a ! -e "$FAKE/data/adb/modules/.TA_utl" -a ! -e "$FAKE/storage/emulated/0/stop-tspa-auto-target" ]
 
+# ---------------------------------------------------------------- WebUI sources
+SRC="$ROOT/webui/src"
+# no keybox.xml.bak copies (owner: no backup files on the device)
+check "keybox.ts writes keybox.xml via file.write" grep -qF 'await file.write(this.keyboxPath, content)' "$SRC/keybox/keybox.ts"
+check "keybox writers make no .bak copy" [ "$(cat "$SRC/keybox/keybox.ts" "$SRC/keybox/custom.ts" | grep -c '\.bak')" = 0 ]
+
 echo "passed $pass failed $fail skipped $skip"
 [ "$fail" = 0 ]

@@ -144,7 +144,6 @@ export class CustomKeyboxProvider {
         try {
           await file.createDirectory(tmpDir)
           await file.write(input, data)
-          await file.copy(this.#keybox.keyboxPath, `${this.#keybox.keyboxPath}.bak`).catch(() => {})
           await this.#keybox.cli.transformFile(input, this.#keybox.keyboxPath, script)
           this.#snackbar.show(i18n.t('prompt_custom_key_set'), true)
         } finally {
