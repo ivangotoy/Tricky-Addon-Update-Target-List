@@ -74,6 +74,9 @@ const NIGHTLY_LINK = `https://nightly.link/${GITHUB_REPO}/workflows/build/main?p
 1
     if (channel === 'stable') return this.#performStableUpdate()
 EOF
+# the build step runs upstream code (pnpm install lifecycle scripts): no signing secrets there
+check "module-release.yml passes no SIGN_* secrets" [ "$(grep -c 'SIGN_' "$ROOT/.forgejo/workflows/module-release.yml")" = 0 ]
+check "module-release.yml still builds via module-ci.sh build" grep -qF 'bash src/.forgejo/module-ci.sh build src' "$ROOT/.forgejo/workflows/module-release.yml"
 check "module-ci.conf patches exactly 4 strings" [ "$(grep -c '^    ("' "$ROOT/.forgejo/module-ci.conf")" = 4 ]
 
 # ---------------------------------------------------------------- module scripts
