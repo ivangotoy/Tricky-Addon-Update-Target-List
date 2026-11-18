@@ -141,13 +141,18 @@ export class CustomKeyboxProvider {
       if (script) {
         const tmpDir = `${await this.#keybox.cli.getBasePath()}/common/tmp`
         const input = `${tmpDir}/keybox-${crypto.randomUUID()}.tmp`
+        const output = `${input}.out`
         try {
           await file.createDirectory(tmpDir)
           await file.write(input, data)
-          await this.#keybox.cli.transformFile(input, this.#keybox.keyboxPath, script)
-          this.#snackbar.show(i18n.t('prompt_custom_key_set'), true)
+          await this.#keybox.cli.transformFile(input, output, script)
+          const content = await file.read(output)
+          if (!content.trim()) throw new Error('custom keybox script produced no output')
+          const result = await this.#keybox.setKeybox(content)
+          this.#snackbar.show(i18n.t(result ? 'prompt_custom_key_set' : 'prompt_custom_key_set_error'), result)
         } finally {
           await file.delete(input).catch(() => {})
+          await file.delete(output).catch(() => {})
         }
       } else {
         const result = await this.#keybox.setKeybox(data)

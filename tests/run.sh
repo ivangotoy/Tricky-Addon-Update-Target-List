@@ -177,6 +177,9 @@ check "shellFile.ts has no fixed FileEOF delimiter" [ "$(grep -c "<< 'FileEOF'" 
 # KsuIo.write: the tmp file replaces the target only after write, flush and close succeeded
 check "ksuIo.ts write() renames tmp onto the target" grep -qF 'tmpFile.renameTo(path)' "$SRC/file/ksuIo.ts"
 check "ksuIo.ts write() renames only a complete tmp file" grep -qF 'if (complete && !tmpFile.renameTo(path))' "$SRC/file/ksuIo.ts"
+# custom keybox script: the shell redirect must not truncate keybox.xml before the script ran
+check "custom.ts transforms into a tmp output" grep -qF 'transformFile(input, output, script)' "$SRC/keybox/custom.ts"
+check "custom.ts never redirects a script into keybox.xml" [ "$(grep -c 'transformFile([^)]*keyboxPath' "$SRC/keybox/custom.ts")" = 0 ]
 
 echo "passed $pass failed $fail skipped $skip"
 [ "$fail" = 0 ]
