@@ -135,6 +135,15 @@ customize KSU=true KSU_VER_CODE=40000 KSU_KERNEL_VER_CODE=40000
 r=$?
 check "customize.sh KSU: exit 0" [ "$r" = 0 ]
 check "customize.sh KSU: common/update/module.prop installed" cmp -s "$ROOT/module/module.prop" "$W/inst-mod/common/update/module.prop"
+# the uninstall remnant (common/update + uninstall.sh + .default) is Magisk-only
+check "customize.sh KSU: no Magisk remnant copies" [ ! -e "$W/inst-mod/common/update/uninstall.sh" -a ! -e "$W/inst-mod/common/update/common/.default" ]
+customize MAGISK_VER_CODE=28000 MAGISK_VER=28.0
+r=$?
+check "customize.sh Magisk: exit 0" [ "$r" = 0 ]
+check "customize.sh Magisk: remnant gets uninstall.sh and .default" \
+    sh -c 'cmp -s "$1" "$2/uninstall.sh" && cmp -s "$3" "$2/common/.default"' sh \
+    "$W/inst-mod/uninstall.sh" "$W/inst-mod/common/update" "$ROOT/module/common/.default"
+check "customize.sh Magisk: no test syntax error" [ "$(grep -c 'missing' "$W/customize.out")" = 0 ]
 
 # post-fs-data.sh: manager detection, stale symlink cleanup
 reset_root

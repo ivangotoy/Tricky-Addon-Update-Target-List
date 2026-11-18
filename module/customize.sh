@@ -49,7 +49,7 @@ ui_print "- Installing..."
 # Magisk cleanup
 rm -rf "/data/adb/modules/.TA_utl"
 
-if [ -n "$ACTION"]; then
+if [ -n "$ACTION" ]; then
     mkdir -p "$MODPATH/common/update/common"
     cp "$MODPATH/common/.default" "$MODPATH/common/update/common/.default"
     cp "$MODPATH/uninstall.sh" "$MODPATH/common/update/uninstall.sh"
