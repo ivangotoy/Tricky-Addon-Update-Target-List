@@ -10,7 +10,7 @@ elif [ -d "$OMK" ] && [ ! -e "$OMK/disable" ] && [ ! -e "$OMK/remove" ]; then
 elif [ -d "$TEES" ] && [ ! -e "$TEES/disable" ] && [ ! -e "$TEES/remove" ]; then
     RUNTIME="$TEES"
 else
-    if [ -f "$MODPATH/action.sh" ]; then
+    if [ "$KSU" != "true" ] && [ "$APATCH" != "true" ] && [ "$MODPATH" != "/data/adb/modules/TA_utl" ]; then
         [ -d "/data/adb/modules/TA_utl" ] && rm -rf "/data/adb/modules/TA_utl"
         cp -rf "$MODPATH/common/update" "/data/adb/modules/TA_utl"
         touch "/data/adb/modules/TA_utl/remove"

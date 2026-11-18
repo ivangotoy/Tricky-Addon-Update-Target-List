@@ -164,6 +164,25 @@ mv "$M/action.sh" "$M/action.sh.old"
 (export PATH="$STUBS:$PATH" KSU=true; run_t 20 sh "$M/post-fs-data.sh") > "$W/pfd.out" 2>&1
 check "post-fs-data.sh KSU without TrickyStore: module flagged for removal" [ -e "$M/remove" ]
 
+# no runtime module: never delete the directory the script runs from
+# KSU/APatch fresh install (action.sh not yet renamed): flag own dir for removal
+reset_root
+fake_module "$M"
+(export PATH="$STUBS:$PATH" KSU=true; run_t 20 sh "$M/post-fs-data.sh") > "$W/pfd.out" 2>&1
+check "post-fs-data.sh KSU fresh install without TrickyStore: own dir kept, flagged for removal" [ -f "$M/post-fs-data.sh" -a -e "$M/remove" ]
+# Magisk running from the hidden copy: TA_utl remnant (common/update) flagged for removal
+reset_root
+H="$FAKE/data/adb/modules/.TA_utl"
+fake_module "$H"
+(export PATH="$STUBS:$PATH"; unset KSU APATCH; run_t 20 sh "$H/post-fs-data.sh") > "$W/pfd.out" 2>&1
+check "post-fs-data.sh Magisk hidden copy without TrickyStore: TA_utl remnant flagged for removal" \
+    [ -f "$M/service.sh" -a -e "$M/remove" -a -f "$H/post-fs-data.sh" ]
+# Magisk running from TA_utl itself: flag own dir
+reset_root
+fake_module "$M"
+(export PATH="$STUBS:$PATH"; unset KSU APATCH; run_t 20 sh "$M/post-fs-data.sh") > "$W/pfd.out" 2>&1
+check "post-fs-data.sh Magisk TA_utl without TrickyStore: own dir kept, flagged for removal" [ -f "$M/post-fs-data.sh" -a -e "$M/remove" ]
+
 # uninstall.sh: residue and symlinks of the module it was attached to
 reset_root
 M="$FAKE/data/adb/modules/TA_utl"; TS="$FAKE/data/adb/modules/tricky_store"
