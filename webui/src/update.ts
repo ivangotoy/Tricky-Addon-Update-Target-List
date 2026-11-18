@@ -7,6 +7,8 @@ const RAW_URL = `https://raw.githubusercontent.com/${GITHUB_REPO}`
 const UPDATE_JSON_URL = `${RAW_URL}/main/update.json`
 const NIGHTLY_LINK = `https://nightly.link/${GITHUB_REPO}/workflows/build/main?preview`
 const BOT_BASE = `${RAW_URL}/bot`
+// locale hot-update disabled: downloaded strings would be rendered as HTML in a root WebUI; bundled locales only
+const LOCALES_HOT_UPDATE = false
 const MIRROR_BASE = 'https://gh.sevencdn.com/'
 const UPDATE_PROP = `/common/update/module.prop`
 
@@ -63,6 +65,7 @@ export class UpdateManager {
   }
 
   async updateLocales(): Promise<boolean> {
+    if (!LOCALES_HOT_UPDATE) return false
     try {
       const response = await this.#fetchWithFallback(`${BOT_BASE}/locales_version`)
       if (!response.ok) return false

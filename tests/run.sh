@@ -298,6 +298,13 @@ done
 check "SPAWN_ARG rejects a leading ~, # or -" sh -c '! printf "~/x\n#x\n-x\n" | grep -Eq "$1"' sh "$RE"
 check "cli.ts checks spawn args in downloadFile, manageModule and getXposedList" \
     [ "$(grep -c 'assertSpawnArgs(\[' "$SRC/cli.ts")" = 3 ]
+# remote markdown (changelog, translation guide) and locale strings never become live HTML in the root WebUI
+check "update.ts: locale hot-update disabled (updateLocales returns false first)" \
+    sh -c 'grep -qx "const LOCALES_HOT_UPDATE = false" "$1" && grep -A1 "async updateLocales(): Promise<boolean> {" "$1" | grep -qx "    if (!LOCALES_HOT_UPDATE) return false"' sh "$ROOT/webui/src/update.ts"
+check "markdown.ts escapes raw HTML in marked output" grep -qF 'marked.use({ renderer: { html: ({ text }) => escapeHtml(text) } })' "$SRC/dialog/markdown.ts"
+check "markdown.ts strips non-http(s) link targets" grep -qF "a.removeAttribute('href')" "$SRC/dialog/markdown.ts"
+check "cli.ts linkRedirect: http(s) only, single-quoted for the shell" \
+    [ "$(grep -c 'if (!/^https?:\\/\\//.test(url)) return' "$SRC/cli.ts")" = 1 -a "$(grep -cF -e '-d ${quote(url)}`' "$SRC/cli.ts")" = 1 ]
 
 echo "passed $pass failed $fail skipped $skip"
 [ "$fail" = 0 ]

@@ -84,7 +84,9 @@ export class Cli {
   }
 
   async linkRedirect(url: string): Promise<void> {
-    const result = await exec(`am start -a android.intent.action.VIEW -d '${url}'`)
+    if (!/^https?:\/\//.test(url)) return
+    const quote = (s: string) => `'${s.replace(/'/g, "'\\''")}'`
+    const result = await exec(`am start -a android.intent.action.VIEW -d ${quote(url)}`)
     if (result.errno !== 0) window.open(url, '_blank')
   }
 
