@@ -1,3 +1,4 @@
+import { exec } from 'kernelsu-alt'
 import { Cli } from './cli'
 import { file } from './file'
 import type { Config } from './conifg/config'
@@ -119,8 +120,8 @@ export class UpdateManager {
   async #performStableUpdate(): Promise<boolean> {
     const response = await fetch(UPDATE_JSON_URL)
     if (!response.ok) throw new Error('Failed to fetch stable update info')
-    const data = (await response.json()) as { zipUrl: string }
-    return this.#downloadAndInstall(data.zipUrl)
+    const data = (await response.json()) as { zipUrl: string; zipSha256?: unknown }
+    return this.#downloadAndInstall(data.zipUrl, data.zipSha256)
   }
 
   async #getStableChangelog(): Promise<string> {
@@ -202,7 +203,7 @@ export class UpdateManager {
     const zipUrl = await this.#getCanaryZipUrl()
     if (!zipUrl) throw new Error('Failed to fetch nightly link')
 
-    return this.#downloadAndInstall(zipUrl)
+    return this.#downloadAndInstall(zipUrl, undefined)
   }
 
   async #fetchWithFallback(url: string): Promise<Response> {
@@ -233,17 +234,28 @@ export class UpdateManager {
     }
   }
 
-  async #downloadAndInstall(url: string): Promise<boolean> {
+  // zipSha256: sha256 of the zip from update.json (written by release_files() in .forgejo/module-ci.conf)
+  async #downloadAndInstall(url: string, zipSha256: unknown): Promise<boolean> {
+    const expected = typeof zipSha256 === 'string' ? zipSha256.toLowerCase() : ''
+    if (!/^[0-9a-f]{64}$/.test(expected)) throw new Error('update.json has no valid zipSha256')
     const basePath = await this.#cli.getBasePath()
     const tmpDir = `${basePath}/common/tmp`
+    const zip = `${tmpDir}/module.zip`
 
     await file.createDirectory(tmpDir)
     await this.#downloadFile(url, `${tmpDir}/module.zip`).catch(async (error) => {
       await file.delete(`${tmpDir}/module.zip`).catch(() => {})
       throw error
     })
+    const hash = await exec(`sha256sum '${zip}'`)
+    const actual = hash.errno === 0 ? hash.stdout.toLowerCase().match(/[0-9a-f]{64}/)?.[0] : undefined
+    if (actual !== expected) {
+      await file.delete(zip).catch(() => {})
+      if (!actual) throw new Error('module.zip sha256 could not be computed')
+      throw new Error('module.zip sha256 mismatch')
+    }
     try {
-      await this.#cli.installModule(`${tmpDir}/module.zip`)
+      await this.#cli.installModule(zip)
     } catch {
       return false
     }

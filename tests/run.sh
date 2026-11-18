@@ -79,6 +79,44 @@ check "module-release.yml passes no SIGN_* secrets" [ "$(grep -c 'SIGN_' "$ROOT/
 check "module-release.yml still builds via module-ci.sh build" grep -qF 'bash src/.forgejo/module-ci.sh build src' "$ROOT/.forgejo/workflows/module-release.yml"
 check "module-ci.conf patches exactly 4 strings" [ "$(grep -c '^    ("' "$ROOT/.forgejo/module-ci.conf")" = 4 ]
 
+# ---------------------------------------------------------------- release_files (zip sha256 into update.json)
+# Replays module-ci.sh's update.json step (load_conf and lines 266-278, taken verbatim from the script)
+# plus its commit, in a scratch repo, with a made-up release and fixture zip.
+CI="$ROOT/.forgejo/module-ci.sh"
+check "module-ci.sh:266-278 is still the update.json + release_files step" \
+    sh -c 'sed -n 266p "$1" | grep -qF "mkdir -p \"\$(dirname \"\$UPDATE_JSON_PATH\")\"" && sed -n 277p "$1" | grep -qF "for f in \$RELEASE_FILES; do git add -- \"\$f\"; done" && sed -n 278p "$1" | grep -qx "fi"' sh "$CI"
+if have bash && have python3 && have git; then
+    RT="$W/release"; mkdir -p "$RT/repo"
+    printf 'fixture zip bytes\n' > "$RT/Mod-v1.0-ci7.zip"
+    (
+        cd "$RT/repo" && export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 \
+            GIT_AUTHOR_NAME=ci GIT_AUTHOR_EMAIL=ci@example.invalid GIT_COMMITTER_NAME=ci GIT_COMMITTER_EMAIL=ci@example.invalid
+        git init -q . && git commit -q --allow-empty -m init &&
+        bash -c 'set -euo pipefail
+            REPOSITORY=owner/repo
+            eval "$(sed -n "/^load_conf() {\$/,/^}\$/p" "$1")"
+            load_conf "$2"
+            VERSION=v1.0-ci7 VC=123 ZIP="$3" ZIP_NAME=Mod-v1.0-ci7.zip TAG=v1.0-ci7 BUILT_VERSION=v1.0 SRC_SHA=0000000000000000000000000000000000000000
+            ZIP_URL=https://forge.example.invalid/owner/repo/releases/download/v1.0-ci7/Mod-v1.0-ci7.zip
+            CHANGELOG_URL=https://forge.example.invalid/owner/repo/raw/commit/0000000000000000000000000000000000000000/changelog.md
+            UPDATE_URL=https://forge.example.invalid/owner/repo/raw/branch/main/.forgejo/update.json BODY=body
+            ZIP_SHA="$(sha256sum "$ZIP" | cut -d" " -f1)"
+            eval "$(sed -n "266,278p" "$1")"
+            git commit -q -m "update.json: $VERSION (versionCode $VC)"' sh "$CI" "$ROOT/.forgejo/module-ci.conf" "$RT/Mod-v1.0-ci7.zip" &&
+        git show HEAD:.forgejo/update.json
+    ) > "$RT/update.json" 2> "$RT/err"
+    check "release step commits a valid update.json with the 4 fields and zipSha256 of the zip" python3 -I -c '
+import hashlib, json, sys
+d = json.load(open(sys.argv[1]))
+want = {"version": "v1.0-ci7", "versionCode": 123,
+        "zipUrl": "https://forge.example.invalid/owner/repo/releases/download/v1.0-ci7/Mod-v1.0-ci7.zip",
+        "changelog": "https://forge.example.invalid/owner/repo/raw/commit/0000000000000000000000000000000000000000/changelog.md",
+        "zipSha256": hashlib.sha256(open(sys.argv[2], "rb").read()).hexdigest()}
+sys.exit(0 if d == want else "got %r" % d)' "$RT/update.json" "$RT/Mod-v1.0-ci7.zip"
+else
+    sk "release_files replay (needs bash, python3, git)"
+fi
+
 # ---------------------------------------------------------------- module scripts
 STUBS="$W/bin"
 mkdir -p "$STUBS"
@@ -308,6 +346,15 @@ check "cli.ts linkRedirect: http(s) only, single-quoted for the shell" \
 # a failed module download leaves no partial module.zip behind
 check "update.ts deletes the partial module.zip when the download throws" \
     sh -c 'grep -A2 "await this.#downloadFile(url, \`\${tmpDir}/module.zip\`).catch(async (error) => {" "$1" | grep -qF "await file.delete(\`\${tmpDir}/module.zip\`).catch(() => {})"' sh "$SRC/update.ts"
+# WebUI updater installs a module zip only when its sha256 equals update.json's zipSha256
+UT="$SRC/update.ts"
+check "update.ts passes update.json zipSha256 to the installer" grep -qF 'return this.#downloadAndInstall(data.zipUrl, data.zipSha256)' "$UT"
+check "update.ts requires a 64-hex zipSha256 before downloading" grep -qF "if (!/^[0-9a-f]{64}\$/.test(expected)) throw new Error('update.json has no valid zipSha256')" "$UT"
+check "update.ts hashes the fixed module.zip path and refuses a mismatch before installModule" sh -c '
+    h=$(grep -n "exec(\`sha256sum '"'"'\${zip}'"'"'\`)" "$1" | cut -d: -f1 | head -n1)
+    m=$(grep -n "throw new Error('"'"'module.zip sha256 mismatch'"'"')" "$1" | cut -d: -f1 | head -n1)
+    i=$(grep -n "await this.#cli.installModule(zip)" "$1" | cut -d: -f1 | head -n1)
+    [ -n "$h" ] && [ -n "$m" ] && [ -n "$i" ] && [ "$h" -lt "$m" ] && [ "$m" -lt "$i" ]' sh "$UT"
 
 echo "passed $pass failed $fail skipped $skip"
 [ "$fail" = 0 ]
