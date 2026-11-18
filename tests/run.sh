@@ -170,6 +170,10 @@ SRC="$ROOT/webui/src"
 # no keybox.xml.bak copies (owner: no backup files on the device)
 check "keybox.ts writes keybox.xml via file.write" grep -qF 'await file.write(this.keyboxPath, content)' "$SRC/keybox/keybox.ts"
 check "keybox writers make no .bak copy" [ "$(cat "$SRC/keybox/keybox.ts" "$SRC/keybox/custom.ts" | grep -c '\.bak')" = 0 ]
+# ShellFile.write: data must not be able to end the here-doc (a data line equal to the delimiter
+# would run the following lines as root shell commands)
+check "shellFile.ts picks a here-doc delimiter absent from the data" grep -qF "while (data.includes(eof)) eof += '_'" "$SRC/file/shellFile.ts"
+check "shellFile.ts has no fixed FileEOF delimiter" [ "$(grep -c "<< 'FileEOF'" "$SRC/file/shellFile.ts")" = 0 ]
 
 echo "passed $pass failed $fail skipped $skip"
 [ "$fail" = 0 ]
