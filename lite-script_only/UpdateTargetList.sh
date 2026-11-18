@@ -40,14 +40,19 @@ EXCLUDE=$(echo "$EXCLUDE" | tr '\n' '|' | sed 's/^|//;s/|$//')
 ADDITION=$(echo "$ADDITION" | tr '\n' ' ' | sed 's/^ //;s/ $//')
 
 # Add all non-system apps to the target file and remove exclusions
-su -c pm list packages -3 </dev/null 2>&1 | cat | awk -F: '{print $2}' | grep -Ev "$EXCLUDE" > /data/adb/tricky_store/target.txt
+if ! PACKAGES=$(su -c pm list packages -3 </dev/null); then
+    echo "! pm list packages failed, target.txt left unchanged"
+    exit 1
+fi
+echo "$PACKAGES" | awk -F: '{print $2}' | grep -Ev "$EXCLUDE" > /data/adb/tricky_store/target.txt.tmp
 
 # Add additional apps to the target file if they are not already present
 for app in $ADDITION; do
-    if ! grep -qx "$app" /data/adb/tricky_store/target.txt; then
-        echo "$app" >> /data/adb/tricky_store/target.txt
+    if ! grep -qx "$app" /data/adb/tricky_store/target.txt.tmp; then
+        echo "$app" >> /data/adb/tricky_store/target.txt.tmp
     fi
 done
+mv -f /data/adb/tricky_store/target.txt.tmp /data/adb/tricky_store/target.txt
 
 echo " "
 echo "- All done!"

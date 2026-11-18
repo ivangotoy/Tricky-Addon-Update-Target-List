@@ -185,6 +185,23 @@ ln -s "$M/webui" "$TEES/webroot"; ln -s "$M/action.sh" "$TEES/action.sh"
 (export PATH="$STUBS:$PATH"; run_t 20 sh "$M/uninstall.sh") > "$W/un.out" 2>&1
 check "uninstall.sh: TEESimulator webroot/action.sh symlinks removed" [ ! -L "$TEES/webroot" -a ! -L "$TEES/action.sh" ]
 
+# lite script: target.txt is replaced only when pm list packages succeeded
+LB="$W/litebin"; mkdir -p "$LB"
+printf '#!/bin/sh\n[ "$1" = -c ] && shift\nexec "$@"\n' > "$LB/su"
+printf '#!/bin/sh\n[ -n "$PM_FAIL" ] && { echo "Error: pm down" >&2; exit 1; }\nprintf "package:com.example.one\\npackage:com.miui.example\\npackage:com.example.two\\n"\n' > "$LB/pm"
+chmod +x "$LB/su" "$LB/pm"
+reset_root
+rewrite "$ROOT/lite-script_only/UpdateTargetList.sh" "$W/lite.sh"
+TT="$FAKE/data/adb/tricky_store/target.txt"
+printf 'com.example.keep\n' > "$TT"
+(export PATH="$LB:$PATH" PM_FAIL=1; run_t 20 sh "$W/lite.sh") > "$W/lite.out" 2>&1
+check "lite script: pm failure leaves target.txt unchanged" [ "$(cat "$TT")" = com.example.keep ]
+check "lite script: no temp file left after pm failure" [ ! -e "$TT.tmp" ]
+(export PATH="$LB:$PATH"; run_t 20 sh "$W/lite.sh") > "$W/lite.out" 2>&1
+check "lite script: target.txt = user apps minus excludes plus additions" \
+    [ "$(tr '\n' ' ' < "$TT")" = "com.example.one com.example.two com.google.android.gms com.google.android.gsf com.android.vending io.github.vvb2060.keyattestation io.github.vvb2060.mahoshojo icu.nullptr.nativetest " ]
+check "lite script: no temp file left" [ ! -e "$TT.tmp" ]
+
 # ---------------------------------------------------------------- WebUI sources
 SRC="$ROOT/webui/src"
 # no keybox.xml.bak copies (owner: no backup files on the device)
