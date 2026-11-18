@@ -108,7 +108,7 @@ export class Cli {
     const managerPath = await this.getManagerPath()
     return new Promise((resolve, reject) => {
       const tryCurl = () => {
-        const curl = spawn('curl', ['--connect-timeout', '10', '-L', '-s', '-o', destPath, url],
+        const curl = spawn('curl', ['-f', '--connect-timeout', '10', '--max-time', '300', '-L', '-s', '-o', destPath, url],
           { env: { PATH: `$PATH:${managerPath}:/data/data/com.termux/files/usr/bin` }})
         curl.on('exit', (code) => {
           if (code === 0) resolve()

@@ -19,7 +19,7 @@ fi
 # curl, has ssl on android, we use it if found
 download() {
     if command -v curl >/dev/null 2>&1; then
-        curl --connect-timeout 10 -Ls "$1"
+        curl -f --connect-timeout 10 --max-time 30 -Ls "$1"
     else
         busybox wget -T 10 --no-check-certificate -qO- "$1"
     fi

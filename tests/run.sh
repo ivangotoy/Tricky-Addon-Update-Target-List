@@ -242,6 +242,15 @@ ln -s "$M/webui" "$TEES/webroot"; ln -s "$M/action.sh" "$TEES/action.sh"
 (export PATH="$STUBS:$PATH"; run_t 20 sh "$M/uninstall.sh") > "$W/un.out" 2>&1
 check "uninstall.sh: TEESimulator webroot/action.sh symlinks removed" [ ! -L "$TEES/webroot" -a ! -L "$TEES/action.sh" ]
 
+# downloads fail on HTTP errors and are bounded in time
+reset_root
+fake_module "$M"
+(export PATH="$STUBS:$PATH"; run_t 20 sh "$M/common/get_extra.sh" --download https://example.invalid/file) > "$W/ge.out" 2>&1
+check "get_extra.sh --download: curl -f with --max-time" grep -qxF 'curl -f --connect-timeout 10 --max-time 30 -Ls https://example.invalid/file' "$LOG"
+check "get_extra.sh wget fallback keeps its -T timeout" grep -qF 'busybox wget -T 10 ' "$ROOT/module/common/get_extra.sh"
+check "cli.ts downloadFile: curl -f with --max-time 300, wget fallback with -T" \
+    sh -c 'grep -qF "spawn('"'"'curl'"'"', ['"'"'-f'"'"', '"'"'--connect-timeout'"'"', '"'"'10'"'"', '"'"'--max-time'"'"', '"'"'300'"'"', '"'"'-L'"'"', '"'"'-s'"'"', '"'"'-o'"'"', destPath, url]" "$1" && grep -qF "['"'"'wget'"'"', '"'"'-T'"'"', '"'"'10'"'"'" "$1"' sh "$ROOT/webui/src/cli.ts"
+
 # action.sh (Magisk): without a WebUI app it opens the releases page, never pm-installs a downloaded APK
 AB="$W/actbin"; mkdir -p "$AB"
 for c in pm am curl wget busybox ping sleep; do
