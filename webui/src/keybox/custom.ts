@@ -144,7 +144,7 @@ export class CustomKeyboxProvider {
         const output = `${input}.out`
         try {
           await file.createDirectory(tmpDir)
-          await file.write(input, data)
+          await file.write(input, data, true)
           await this.#keybox.cli.transformFile(input, output, script)
           const content = await file.read(output)
           if (!content.trim()) throw new Error('custom keybox script produced no output')

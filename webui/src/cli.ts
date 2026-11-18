@@ -82,7 +82,7 @@ export class Cli {
 
   async transformFile(src: string, dst: string, command: string): Promise<void> {
     const quote = (path: string) => `'${path.replace(/'/g, "'\\''")}'`
-    const result = await exec(`(${command}) < ${quote(src)} > ${quote(dst)}`)
+    const result = await exec(`umask 077; (${command}) < ${quote(src)} > ${quote(dst)}`)
     if (result.errno !== 0) throw new Error(`transformFile failed (${result.errno}): ${result.stderr}`)
   }
 

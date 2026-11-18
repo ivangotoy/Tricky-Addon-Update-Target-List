@@ -85,7 +85,7 @@ export class Keybox {
 
   async setKeybox(content: string): Promise<boolean> {
     try {
-      await file.write(this.keyboxPath, content)
+      await file.write(this.keyboxPath, content, true)
       return true
     } catch {
       return false

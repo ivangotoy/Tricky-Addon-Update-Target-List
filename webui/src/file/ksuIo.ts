@@ -1,4 +1,4 @@
-import { io } from 'kernelsu-alt'
+import { exec, io } from 'kernelsu-alt'
 import { File } from './file'
 
 export class KsuIo extends File {
@@ -35,11 +35,15 @@ export class KsuIo extends File {
     }
   }
 
-  async write(path: string, data: string): Promise<void> {
+  async write(path: string, data: string, ownerOnly = false): Promise<void> {
     const tmpPath = `${path}.${Date.now()}.${Math.random().toString(36).slice(2)}.tmp`
+    if (ownerOnly && (await exec(`umask 077 && : > '${tmpPath}'`)).errno !== 0) throw new Error(`File.write failed to create: ${tmpPath}`)
     const stream = io.FileOutputStream()
     const id = stream.open(tmpPath, false)
-    if (!id) throw new Error(`File.write failed to open: ${tmpPath}`)
+    if (!id) {
+      await this.delete(tmpPath).catch(() => {})
+      throw new Error(`File.write failed to open: ${tmpPath}`)
+    }
     const bytes = new TextEncoder().encode(`${data.trim()}\n`)
     let complete = false
     try {

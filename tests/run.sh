@@ -240,7 +240,7 @@ check "lite script: no user apps -> additions only, no blank line" [ "$(grep -c 
 # ---------------------------------------------------------------- WebUI sources
 SRC="$ROOT/webui/src"
 # no keybox.xml.bak copies (owner: no backup files on the device)
-check "keybox.ts writes keybox.xml via file.write" grep -qF 'await file.write(this.keyboxPath, content)' "$SRC/keybox/keybox.ts"
+check "keybox.ts writes keybox.xml via file.write" grep -qF 'await file.write(this.keyboxPath, content, true)' "$SRC/keybox/keybox.ts"
 check "keybox writers make no .bak copy" [ "$(cat "$SRC/keybox/keybox.ts" "$SRC/keybox/custom.ts" | grep -c '\.bak')" = 0 ]
 # ShellFile.write: data must not be able to end the here-doc (a data line equal to the delimiter
 # would run the following lines as root shell commands)
@@ -272,6 +272,14 @@ check "cli.ts uninstall copies from common/update (KSU, APatch, Magisk)" [ "$(gr
 check "cli.ts has no \${basePath}/update path" [ "$(grep -c '\${basePath}/update' "$SRC/cli.ts")" = 0 ]
 check "file_selector.ts escapes path segments on back navigation and on open" \
     [ "$(grep -c "filter(Boolean).map(escapeHtml).join('<span" "$FS")" = 2 -a "$(grep -c "filter(Boolean).join('<span" "$FS")" = 0 ]
+# keybox data (private keys) only in files that are mode 600 before the data is written
+check "file.ts write() takes ownerOnly" grep -qF 'abstract write(path: string, data: string, ownerOnly?: boolean): Promise<void>' "$SRC/file/file.ts"
+check "shellFile.ts creates the tmp file under umask 077 for ownerOnly" \
+    grep -qF "\${ownerOnly ? 'umask 077; ' : ''}cat << '\${eof}' > \"\${tmp}\"" "$SRC/file/shellFile.ts"
+check "ksuIo.ts creates the tmp file mode 600 before writing for ownerOnly" grep -qF "umask 077 && : > '\${tmpPath}'" "$SRC/file/ksuIo.ts"
+check "keybox.ts writes keybox.xml ownerOnly" grep -qF 'file.write(this.keyboxPath, content, true)' "$SRC/keybox/keybox.ts"
+check "custom.ts writes the downloaded keybox input ownerOnly" grep -qF 'file.write(input, data, true)' "$SRC/keybox/custom.ts"
+check "cli.ts transformFile output created under umask 077" grep -qF 'exec(`umask 077; (${command}) < ${quote(src)} > ${quote(dst)}`)' "$SRC/cli.ts"
 
 echo "passed $pass failed $fail skipped $skip"
 [ "$fail" = 0 ]
