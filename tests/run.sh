@@ -245,6 +245,10 @@ check "keybox writers make no .bak copy" [ "$(cat "$SRC/keybox/keybox.ts" "$SRC/
 # ShellFile.write: data must not be able to end the here-doc (a data line equal to the delimiter
 # would run the following lines as root shell commands)
 check "shellFile.ts picks a here-doc delimiter absent from the data" grep -qF "while (data.includes(eof)) eof += '_'" "$SRC/file/shellFile.ts"
+# ShellFile.write: tmp file in the target's directory, mv onto the target only when the write succeeded
+check "shellFile.ts writes a tmp file and mv's it onto the target only on success" \
+    grep -qF '> "${tmp}" && mv -f "${tmp}" "${path}" || { rm -f "${tmp}"; false; }' "$SRC/file/shellFile.ts"
+check "shellFile.ts tmp file sits next to the target" grep -qF 'const tmp = `${path}.tmp.${Date.now()}`' "$SRC/file/shellFile.ts"
 check "shellFile.ts has no fixed FileEOF delimiter" [ "$(grep -c "<< 'FileEOF'" "$SRC/file/shellFile.ts")" = 0 ]
 # KsuIo.write: the tmp file replaces the target only after write, flush and close succeeded
 check "ksuIo.ts write() renames tmp onto the target" grep -qF 'tmpFile.renameTo(path)' "$SRC/file/ksuIo.ts"

@@ -21,7 +21,8 @@ export class ShellFile extends File {
   async write(path: string, data: string): Promise<void> {
     let eof = 'FileEOF'
     while (data.includes(eof)) eof += '_'
-    const result = await exec(`cat << '${eof}' > "${path}"
+    const tmp = `${path}.tmp.${Date.now()}`
+    const result = await exec(`cat << '${eof}' > "${tmp}" && mv -f "${tmp}" "${path}" || { rm -f "${tmp}"; false; }
 ${data.trim()}
 ${eof}`)
     if (result.errno !== 0) throw new Error(`File.write failed (${result.errno}): ${result.stderr}`)
