@@ -184,6 +184,13 @@ check "custom.ts never redirects a script into keybox.xml" [ "$(grep -c 'transfo
 check "app_list.ts escapes the label in the card (alt + name) and the policy dialog" \
     [ "$(grep -c 'escapeHtml(entry.appName)' "$SRC/app_list/app_list.ts")" = 2 -a "$(grep -c 'escapeHtml(appName)' "$SRC/app_list/app_list.ts")" = 1 ]
 check "app_list.ts has no raw label in HTML" [ "$(grep -c '\${entry.appName}\|`\${appName}' "$SRC/app_list/app_list.ts")" = 0 ]
+# file selector: names under /storage/emulated/0 are chosen by any app with storage access
+FS="$SRC/file_selector/file_selector.ts"
+check "file_selector.ts single-quotes paths in exec (cd, cat)" \
+    [ "$(grep -c 'cd \${shellQuote(path)}' "$FS")" = 1 -a "$(grep -c 'cat \${shellQuote(path)}' "$FS")" = 1 ]
+check "file_selector.ts has no double-quoted path in exec" [ "$(grep -c '"\${path}"' "$FS")" = 0 ]
+check "file_selector.ts escapes names in the list and the path bar" \
+    [ "$(grep -c '<span>\${escapeHtml(item.name)}</span>' "$FS")" = 1 -a "$(grep -c 'data-path="\${escapeHtml(fullPath)}">\${escapeHtml(segment)}<' "$FS")" = 1 ]
 
 echo "passed $pass failed $fail skipped $skip"
 [ "$fail" = 0 ]

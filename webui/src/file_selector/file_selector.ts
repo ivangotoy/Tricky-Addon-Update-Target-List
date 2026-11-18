@@ -4,6 +4,9 @@ import { i18n } from '../i18n'
 import { applyDialogAnimation } from '../dialog/animation'
 import './file_selector.scss'
 
+const escapeHtml = (s: string) => s.replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`)
+const shellQuote = (s: string) => `'${s.replace(/'/g, "'\\''")}'`
+
 interface FileItem {
   name: string
   path: string
@@ -159,7 +162,7 @@ export class FileSelector {
     }
 
     const result = await exec(`
-      cd "${path}"
+      cd ${shellQuote(path)}
       for f in *; do
         [ -d "$f" ] && echo "d|$f" || { [[ "$f" == *.${this.#fileType} ]] && echo "f|$f"; }
       done | sort
@@ -195,7 +198,7 @@ export class FileSelector {
         itemElement.innerHTML = `
           <md-ripple></md-ripple>
           <md-icon>${item.isDirectory ? 'folder' : 'description'}</md-icon>
-          <span>${item.name}</span>
+          <span>${escapeHtml(item.name)}</span>
         `
         itemElement.onclick = () => {
           if (item.isDirectory) {
@@ -223,7 +226,7 @@ export class FileSelector {
 
   async #resolveFile(path: string): Promise<void> {
     if (this.#fileSelectorMode === 'content') {
-      const execResult = await exec(`cat "${path}"`)
+      const execResult = await exec(`cat ${shellQuote(path)}`)
       if (execResult.errno === 0) {
         this.#resolve(execResult.stdout)
       } else {
@@ -240,7 +243,7 @@ export class FileSelector {
     const segments = this.#currentPath.split('/').filter(Boolean)
     const pathHTML = segments.map((segment, index) => {
       const fullPath = '/' + segments.slice(0, index + 1).join('/')
-      return `<span class="path-segment" data-path="${fullPath}">${segment}</span>`
+      return `<span class="path-segment" data-path="${escapeHtml(fullPath)}">${escapeHtml(segment)}</span>`
     }).join('<span class="separator">›</span>')
 
     this.#currentPathEl.innerHTML = pathHTML
