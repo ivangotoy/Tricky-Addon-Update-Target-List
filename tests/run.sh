@@ -80,11 +80,13 @@ check "module-release.yml still builds via module-ci.sh build" grep -qF 'bash sr
 check "module-ci.conf patches exactly 4 strings" [ "$(grep -c '^    ("' "$ROOT/.forgejo/module-ci.conf")" = 4 ]
 
 # ---------------------------------------------------------------- release_files (zip sha256 into update.json)
-# Replays module-ci.sh's update.json step (load_conf and lines 266-278, taken verbatim from the script)
+# Replays module-ci.sh's update.json step (load_conf and the block from the update.json mkdir to the release_files fi,
+# both cut verbatim from the script by content, not line numbers)
 # plus its commit, in a scratch repo, with a made-up release and fixture zip.
 CI="$ROOT/.forgejo/module-ci.sh"
-check "module-ci.sh:266-278 is still the update.json + release_files step" \
-    sh -c 'sed -n 266p "$1" | grep -qF "mkdir -p \"\$(dirname \"\$UPDATE_JSON_PATH\")\"" && sed -n 277p "$1" | grep -qF "for f in \$RELEASE_FILES; do git add -- \"\$f\"; done" && sed -n 278p "$1" | grep -qx "fi"' sh "$CI"
+sed -n '/^mkdir -p "\$(dirname "\$UPDATE_JSON_PATH")"$/,/^fi$/p' "$CI" > "$W/release-step.sh"
+check "module-ci.sh update.json step found (writes update.json, runs release_files, stages RELEASE_FILES)" \
+    sh -c 'grep -qF "\"zipUrl\": zip_url" "$1" && grep -qx "    release_files" "$1" && grep -qF "for f in \$RELEASE_FILES; do git add -- \"\$f\"; done" "$1" && tail -n1 "$1" | grep -qx fi' sh "$W/release-step.sh"
 if have bash && have python3 && have git; then
     RT="$W/release"; mkdir -p "$RT/repo"
     printf 'fixture zip bytes\n' > "$RT/Mod-v1.0-ci7.zip"
@@ -101,8 +103,8 @@ if have bash && have python3 && have git; then
             CHANGELOG_URL=https://forge.example.invalid/owner/repo/raw/commit/0000000000000000000000000000000000000000/changelog.md
             UPDATE_URL=https://forge.example.invalid/owner/repo/raw/branch/main/.forgejo/update.json BODY=body
             ZIP_SHA="$(sha256sum "$ZIP" | cut -d" " -f1)"
-            eval "$(sed -n "266,278p" "$1")"
-            git commit -q -m "update.json: $VERSION (versionCode $VC)"' sh "$CI" "$ROOT/.forgejo/module-ci.conf" "$RT/Mod-v1.0-ci7.zip" &&
+            eval "$(cat "$4")"
+            git commit -q -m "update.json: $VERSION (versionCode $VC)"' sh "$CI" "$ROOT/.forgejo/module-ci.conf" "$RT/Mod-v1.0-ci7.zip" "$W/release-step.sh" &&
         git show HEAD:.forgejo/update.json
     ) > "$RT/update.json" 2> "$RT/err"
     check "release step commits a valid update.json with the 4 fields and zipSha256 of the zip" python3 -I -c '
