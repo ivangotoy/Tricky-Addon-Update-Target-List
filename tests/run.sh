@@ -305,6 +305,9 @@ check "markdown.ts escapes raw HTML in marked output" grep -qF 'marked.use({ ren
 check "markdown.ts strips non-http(s) link targets" grep -qF "a.removeAttribute('href')" "$SRC/dialog/markdown.ts"
 check "cli.ts linkRedirect: http(s) only, single-quoted for the shell" \
     [ "$(grep -c 'if (!/^https?:\\/\\//.test(url)) return' "$SRC/cli.ts")" = 1 -a "$(grep -cF -e '-d ${quote(url)}`' "$SRC/cli.ts")" = 1 ]
+# a failed module download leaves no partial module.zip behind
+check "update.ts deletes the partial module.zip when the download throws" \
+    sh -c 'grep -A2 "await this.#downloadFile(url, \`\${tmpDir}/module.zip\`).catch(async (error) => {" "$1" | grep -qF "await file.delete(\`\${tmpDir}/module.zip\`).catch(() => {})"' sh "$SRC/update.ts"
 
 echo "passed $pass failed $fail skipped $skip"
 [ "$fail" = 0 ]

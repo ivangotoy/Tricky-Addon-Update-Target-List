@@ -238,7 +238,10 @@ export class UpdateManager {
     const tmpDir = `${basePath}/common/tmp`
 
     await file.createDirectory(tmpDir)
-    await this.#downloadFile(url, `${tmpDir}/module.zip`)
+    await this.#downloadFile(url, `${tmpDir}/module.zip`).catch(async (error) => {
+      await file.delete(`${tmpDir}/module.zip`).catch(() => {})
+      throw error
+    })
     try {
       await this.#cli.installModule(`${tmpDir}/module.zip`)
     } catch {
