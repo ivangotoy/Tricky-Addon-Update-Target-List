@@ -173,6 +173,14 @@ echo deadbeef > "$FAKE/data/adb/boot_hash"
 check "uninstall.sh: TS webroot/action.sh symlinks removed" [ ! -L "$TS/webroot" -a ! -L "$TS/action.sh" ]
 check "uninstall.sh: boot_hash, hidden dir, sdcard flag removed" \
     [ ! -e "$FAKE/data/adb/boot_hash" -a ! -e "$FAKE/data/adb/modules/.TA_utl" -a ! -e "$FAKE/storage/emulated/0/stop-tspa-auto-target" ]
+# service.sh links webroot into TEESimulator's module too
+reset_root
+TEES="$FAKE/data/adb/modules/teesim"
+mkdir -p "$TEES"
+fake_module "$M"
+ln -s "$M/webui" "$TEES/webroot"; ln -s "$M/action.sh" "$TEES/action.sh"
+(export PATH="$STUBS:$PATH"; run_t 20 sh "$M/uninstall.sh") > "$W/un.out" 2>&1
+check "uninstall.sh: TEESimulator webroot/action.sh symlinks removed" [ ! -L "$TEES/webroot" -a ! -L "$TEES/action.sh" ]
 
 # ---------------------------------------------------------------- WebUI sources
 SRC="$ROOT/webui/src"
