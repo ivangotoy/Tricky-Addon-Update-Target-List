@@ -139,6 +139,11 @@ export class Cli {
     const manager = await this.getManager()
     const managerPath = await this.getManagerPath()
 
+    if (option == 'uninstall') {
+      if (manager == 'APATCH' || manager == 'KSU') await file.copy(`${basePath}/common/update/module.prop`, `${basePath}/module.prop`).catch(() => {})
+      else if (manager == 'MAGISK') await file.copy(`${basePath}/common/update`, `/data/adb/modules/${MOD_ID}`).catch(() => {})
+    }
+
     return new Promise((resolve, reject) => {
       let cmd: [string, string[]]
 
@@ -146,15 +151,12 @@ export class Cli {
 
       switch (manager) {
         case 'APATCH':
-          if (option == 'uninstall') file.copy(`${basePath}/common/update/module.prop`, `${basePath}/module.prop`)
           cmd = ['apd', ['module', option, module]]
           break
         case 'KSU':
-          if (option == 'uninstall') file.copy(`${basePath}/common/update/module.prop`, `${basePath}/module.prop`)
           cmd = ['ksud', ['module', option, module]]
           break
         case 'MAGISK':
-          if (option == 'uninstall') file.copy(`${basePath}/common/update`, `/data/adb/modules/${MOD_ID}`)
           cmd = ['magisk', [`--${option}-module`, module]]
           break
         default:
