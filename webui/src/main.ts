@@ -8,12 +8,11 @@ import { Snackbar } from './snackbar/snackbar'
 import { FileSelector } from './file_selector/file_selector'
 import { History } from './history'
 import { Keybox } from './keybox/keybox'
-import { KeyboxRepo } from './keybox/repo/repo'
 import { DialogController } from './dialog/dialog'
 import { UpdateManager } from './update'
 import { SearchBar } from './search_bar/search_bar'
 import { Keybind } from './keybind'
-import { LOCAL_STORAGE_PREFIX } from './constant'
+import { KEYBOX_REPO_URL, LOCAL_STORAGE_PREFIX } from './constant'
 import './style.scss'
 import { isDev } from './utils/dev'
 
@@ -113,7 +112,6 @@ function float(hide: boolean): void {
 // Main Menu events
 const mainMenu = new MainMenu()
 const keybox = new Keybox(cli, config, fileSelector, snackbar)
-const keyboxRepo = new KeyboxRepo(keybox, history, snackbar)
 const mainMenuContainer = document.querySelector<HTMLElement>('.main-menu')!
 mainMenu.appendTo(mainMenuContainer)
 mainMenu.on('menu-open', () => appList.menuOpen = true)
@@ -124,7 +122,12 @@ mainMenu.on('menu-deselect-all', () => appList.deselectAll())
 mainMenu.on('menu-keybox-aosp', async () => await keybox.setAospKey())
 mainMenu.on('menu-keybox-unknown', async () => await keybox.setUnknownKey())
 mainMenu.on('menu-keybox-local', async () => await keybox.setLocalKey())
-mainMenu.on('menu-keybox-repo', () => keyboxRepo.show())
+// the keybox repo site opens in the external browser (no remote page in a frame of the root WebUI);
+// the downloaded keybox is then set with Keybox > Local
+mainMenu.on('menu-keybox-repo', async () => {
+  await cli.linkRedirect(`${KEYBOX_REPO_URL}/${i18n.lang}`)
+  snackbar.show(i18n.t('prompt_keybox_repo_import_hint', `${i18n.t('menu_keybox')} > ${i18n.t('menu_keybox_local')}`), true, 15000)
+})
 mainMenu.on('menu-add-system-app', () => dialogController.showSystemApp())
 mainMenu.on('menu-select-denylist', async () => appList.fetchDenyList())
 mainMenu.on('menu-deselect-unnecessary', async () => appList.deselectUnnecessary())
@@ -179,7 +182,6 @@ const dialogController = new DialogController(cli, config, updateManager, snackb
 const dialogContent = document.querySelector<HTMLElement>('.dialog-content')!
 fileSelector.appendTo(dialogContent)
 keybox.appendTo(dialogContent)
-keyboxRepo.appendTo(dialogContent)
 appList.appendTo(dialogContent)
 keybox.custom.renderEntries()
 dialogController.appendAll(dialogContent)
