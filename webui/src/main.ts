@@ -72,7 +72,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = /* html */ `
 `
 
 // App List
-const appList = new AppList(config, cli)
+const appList = new AppList(config, cli, snackbar)
 await config.read()
 await appList.fetch()
 appList.syncSystemAppsWithConfig()

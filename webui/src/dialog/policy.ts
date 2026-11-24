@@ -3,14 +3,17 @@ import { i18n } from '../i18n'
 import { Config } from '../conifg/config'
 import { PolicyEditor } from '../app_list/policy'
 import { applyDialogAnimation } from './animation'
+import type { Snackbar } from '../snackbar/snackbar'
 
 export class DefaultPolicyDialog {
   #dialog: MdDialog | null = null
   #policyEditor: PolicyEditor | null = null
   #config: Config
+  #snackbar: Snackbar
 
-  constructor(config: Config) {
+  constructor(config: Config, snackbar: Snackbar) {
     this.#config = config
+    this.#snackbar = snackbar
   }
 
   getElement(): DocumentFragment {
@@ -67,7 +70,7 @@ export class DefaultPolicyDialog {
     } else {
       delete configData.default_policy
     }
-    this.#config.write()
+    this.#config.write().catch(() => this.#snackbar.show(i18n.t('prompt_save_error'), false))
     this.close()
   }
 }

@@ -385,6 +385,10 @@ check "app_list.ts fetchDenyList skips packages already targeted with a suffix" 
 check "keybind.ts leaves Ctrl shortcuts to text fields (Escape still handled)" sh -c '
     grep -qF "const editing = e.composedPath().some(t => t instanceof HTMLTextAreaElement || (t instanceof HTMLInputElement && t.type !== '"'"'checkbox'"'"' && t.type !== '"'"'radio'"'"'))" "$1" &&
     grep -qF "if (key && !(editing && key !== '"'"'keybind-esc'"'"')) {" "$1"' sh "$SRC/keybind.ts"
+# policy saves (per-app dialog, default policy dialog) report a failed config write instead of an unhandled rejection
+check "policy dialogs show prompt_save_error when config.write() fails" sh -c '
+    [ "$(cat "$1/app_list/app_list.ts" "$1/dialog/policy.ts" | grep -cF "this.#config.write().catch(() => this.#snackbar.show(i18n.t('"'"'prompt_save_error'"'"'), false))")" = 2 ]' sh "$SRC"
+check "no un-awaited, uncaught config.write() left in webui/src" [ "$(grep -rn '^ *this\.#config\.write()$' "$SRC" | wc -l)" = 0 ]
 # a failed module download leaves no partial module.zip behind
 check "update.ts deletes the partial module.zip when the download throws" \
     sh -c 'grep -A2 "await this.#downloadFile(url, \`\${tmpDir}/module.zip\`).catch(async (error) => {" "$1" | grep -qF "await file.delete(\`\${tmpDir}/module.zip\`).catch(() => {})"' sh "$SRC/update.ts"

@@ -8,6 +8,7 @@ import { GITHUB_REPO, LOCAL_STORAGE_PREFIX } from '../constant'
 import { applyDialogAnimation } from '../dialog/animation'
 import { PolicyEditor } from './policy'
 import { isDev } from '../utils/dev'
+import type { Snackbar } from '../snackbar/snackbar'
 import './app_list.scss'
 
 const SYSTEM_APPS_KEY = `${LOCAL_STORAGE_PREFIX}AdditionalApps`
@@ -34,6 +35,7 @@ export class AppList {
   #entries: AppEntry[] = []
   #config: Config
   #cli: Cli
+  #snackbar: Snackbar
   #iconObserver: IntersectionObserver | null = null
   #systemAppIconObserver: IntersectionObserver | null = null
   #currentPolicyCard: HTMLElement | null = null
@@ -41,9 +43,10 @@ export class AppList {
   #policyEditor!: PolicyEditor
   menuOpen = false
 
-  constructor(config: Config, cli: Cli) {
+  constructor(config: Config, cli: Cli, snackbar: Snackbar) {
     this.#config = config
     this.#cli = cli
+    this.#snackbar = snackbar
   }
 
   async fetch(): Promise<void> {
@@ -469,7 +472,7 @@ export class AppList {
       const pkg = this.#currentPolicyCard.dataset.package!
       const policy = this.#policyEditor.getPolicy()
       this.#config.set(pkg, policy ?? undefined)
-      this.#config.write()
+      this.#config.write().catch(() => this.#snackbar.show(i18n.t('prompt_save_error'), false))
 
       if (policy && 'app_mode' in policy) {
         const checkbox = this.#currentPolicyCard.querySelector('md-checkbox')!

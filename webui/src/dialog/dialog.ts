@@ -27,7 +27,7 @@ export class DialogController {
     this.about = new AboutDialog(cli, updateManager, snackbar, config)
     this.help = new HelpDialog(cli)
     this.uninstall = new UninstallDialog(cli, snackbar)
-    this.defaultPolicy = new DefaultPolicyDialog(config)
+    this.defaultPolicy = new DefaultPolicyDialog(config, snackbar)
     this.systemApp = new SystemAppDialog(appList)
     this.prop = new PropDialog(cli, config, snackbar)
     this.update = new UpdateDialog(cli, updateManager, snackbar)
