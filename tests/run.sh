@@ -1,7 +1,7 @@
 #!/bin/sh
 # Dependency-free checks for the module scripts, the WebUI sources and the release patch.
 # Usage: TMPDIR=<scratch dir> sh tests/run.sh   (POSIX sh or busybox ash)
-# Checks that need python3/bash print SKIP when the tool is absent; TA_REQUIRE_TOOLS=1
+# Checks that need python3/bash/node print SKIP when the tool is absent; TA_REQUIRE_TOOLS=1
 # turns every SKIP into a failure.
 # Module scripts run from copies whose absolute device paths (/data/adb, /storage/emulated/0)
 # are rewritten into a throwaway root under TMPDIR, with stub commands first in PATH.
@@ -466,11 +466,11 @@ if have node; then
     # replay the decision with the real pattern and the real ConfigIni.support threshold
     PAT=$(sed -n 's|^const TS_FORK_PATTERN = \(/.*/\)$|\1|p' "$IDX")
     MIN=$(sed -n 's|^const MIN_SUPPORTED_VERSION = \([0-9]*\)$|\1|p' "$SRC/conifg/official/config_ini.ts")
-    check "backend replay: fork 255 -> legacy, official 246 -> ini, official 245 -> legacy" node -e '
+    check "backend replay: fork 301 -> legacy, official 246 -> ini, official 245 -> legacy" node -e '
         const pat = eval(process.argv[1]), min = Number(process.argv[2])
         const pick = p => (parseInt(p.versionCode, 10) >= min && !pat.test(Object.values(p).join("\n"))) ? "ini" : "legacy"
         const cases = [
-          [{ id: "tricky_store", name: "Tricky Store OSS", versionCode: "255", author: "beakthoven" }, "legacy"],
+          [{ id: "tricky_store", name: "Example Store Fork", versionCode: "301", author: "example, JingMatrix-style patches" }, "legacy"],
           [{ id: "tricky_store", name: "Tricky Store", versionCode: "246", author: "example" }, "ini"],
           [{ id: "tricky_store", name: "Tricky Store", versionCode: "245", author: "example" }, "legacy"],
         ]
