@@ -43,3 +43,7 @@ Install any of the following:
 [![issue](https://custom-icon-badges.demolab.com/badge/-Open%20Issue-palegreen?style=for-the-badge&logoColor=black&logo=issue-opened)](https://github.com/KOWX712/Tricky-Addon-Update-Target-List/issues)
 [![changelog](https://custom-icon-badges.demolab.com/badge/-Update%20History-orange?style=for-the-badge&logo=history&logoColor=white)](https://github.com/KOWX712/Tricky-Addon-Update-Target-List/blob/main/changelog.md)
 [![Telegram](https://custom-icon-badges.demolab.com/badge/-KOW's%20little%20world-blue?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/kowchannel)
+
+## More KernelSU modules
+
+Check out my other great KernelSU modules here: https://git.digtvbg.com/explore/repos?q=kernelsu-module&topic=1
