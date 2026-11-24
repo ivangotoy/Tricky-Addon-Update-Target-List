@@ -163,10 +163,12 @@ export class ConfigTeeSimulator extends Config {
         label: 'profile_delete',
         variant: 'error',
         disabled: () => Object.keys(this.#teeConfig.profiles).length <= 1,
-        onClick: (editor) => {
+        onClick: (editor, context) => {
           // delete the profile this dialog shows, not the one last picked in another dialog
           const shown = (editor.getField('profile') as (HTMLElement & { value?: string }) | undefined)?.value ?? this.#activeProfile
           if (!this.#deleteProfile(shown)) return
+          // the global select then shows the first profile (refreshSelects): show and activate that one too
+          if (context === 'global') this.#activeProfile = Object.keys(this.#teeConfig.profiles)[0]
           editor.setPolicy(this.#profileWithMeta(this.#activeProfile))
         },
       },

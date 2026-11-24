@@ -440,6 +440,8 @@ for b in official/config_ini official/config_legacy teesimulator/config_teesimul
         [ "$(grep -c "^    this.clearReadFailure()$" "$1")" = 1 ] && [ "$(grep -c "await this.readFailed(this\.[A-Z_]*_FILE)" "$1")" = "$2" ] &&
         grep -A1 "^  override async write(): Promise<void> {$" "$1" | grep -qx "    this.assertWritable()"' sh "$CF/$b.ts" "$nf"
 done
+check "TEESimulator global delete shows and activates the first profile, as the refreshed select does" \
+    grep -qF "if (context === 'global') this.#activeProfile = Object.keys(this.#teeConfig.profiles)[0]" "$TEE"
 # a failed module download leaves no partial module.zip behind
 check "update.ts deletes the partial module.zip when the download throws" \
     sh -c 'grep -A2 "await this.#downloadFile(url, \`\${tmpDir}/module.zip\`).catch(async (error) => {" "$1" | grep -qF "await file.delete(\`\${tmpDir}/module.zip\`).catch(() => {})"' sh "$SRC/update.ts"
