@@ -378,6 +378,9 @@ check "window.open only behind import.meta.env.DEV (cli.ts linkRedirect, bootstr
 check "every live remote fetch() has AbortSignal.timeout (9 in update.ts, app_list.ts, dialog/i18n.ts, custom.ts)" sh -c '
     cd "$1" && L=$(grep -n "await fetch(" update.ts app_list/app_list.ts dialog/i18n.ts keybox/custom.ts | grep -vF -e "fetch('"'"'./locales/" -e "fetch(url)" -e "fetch(mirrorUrl)")
     [ "$(printf "%s\n" "$L" | grep -c "AbortSignal\.timeout(30000) })")" = 9 ] && [ "$(printf "%s\n" "$L" | grep -cv "AbortSignal\.timeout(")" = 0 ]' sh "$SRC"
+# target.txt entries may carry a mode suffix (pkg! / pkg?): select-from-denylist must not add a second plain line
+check "app_list.ts fetchDenyList skips packages already targeted with a suffix" \
+    sh -c 'grep -A6 "async fetchDenyList(): Promise<void> {" "$1" | grep -qF "if (!target.some(t => stripSuffix(t) === pkg)) this.#config.push('"'"'target'"'"', pkg)"' sh "$SRC/app_list/app_list.ts"
 # a failed module download leaves no partial module.zip behind
 check "update.ts deletes the partial module.zip when the download throws" \
     sh -c 'grep -A2 "await this.#downloadFile(url, \`\${tmpDir}/module.zip\`).catch(async (error) => {" "$1" | grep -qF "await file.delete(\`\${tmpDir}/module.zip\`).catch(() => {})"' sh "$SRC/update.ts"

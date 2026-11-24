@@ -170,7 +170,7 @@ export class AppList {
     if (denylist.length < 1) return
     const target = (this.#config.get('target') as string[]) || []
     for (const pkg of denylist) {
-      if (!target.includes(pkg)) this.#config.push('target', pkg)
+      if (!target.some(t => stripSuffix(t) === pkg)) this.#config.push('target', pkg)
     }
     this.#syncCheckboxes()
   }
