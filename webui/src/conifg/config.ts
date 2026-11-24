@@ -52,7 +52,8 @@ export interface SelectFieldMeta {
   optionLabels?: Record<string, string>
   defaultValue?: string
   onLoad?: (context: 'global' | 'perApp', current: string | undefined) => string[]
-  onSelect?: (value: string, editor: PolicyEditorApi, context: 'global' | 'perApp') => string | void
+  // previous: the value the select showed before this change
+  onSelect?: (value: string, editor: PolicyEditorApi, context: 'global' | 'perApp', previous?: string) => string | void
   globalPolicy?: boolean
   perAppPolicy?: boolean
 }

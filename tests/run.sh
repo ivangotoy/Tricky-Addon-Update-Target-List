@@ -406,6 +406,19 @@ check "TEESimulator text fields are caseSensitive (profile name, 3 patch levels,
 check "TEESimulator profile switch applies the form only when it is valid" grep -qF 'if (form) this.#applyProfilePolicy(' "$TEE"
 check "dev fixtures carry no YYYYMM05 (rejected by the ini/legacy YYYYMMDD validator)" \
     [ "$(cat "$SRC/conifg/official/config_ini.ts" "$SRC/app_list/app_list.ts" | grep -c YYYYMM05)" = 0 ]
+# TEESimulator profiles: a switch saves the form into the profile shown before it (not the new one), delete removes the
+# profile the dialog shows, per-app selection does not move the global profile, names are own properties only
+check "policy.ts hands onSelect the value the select showed before the change" sh -c '
+    grep -qF "const replacement = meta.onSelect!(field.value, this, this.#context, this.#selectValues.get(key))" "$1" &&
+    [ "$(grep -c "this.#selectValues.set(key, " "$1")" = 3 ]' sh "$PE"
+check "TEESimulator switch applies the form to the previously shown profile; only the global dialog moves #activeProfile" sh -c '
+    grep -qF "const shown = previous !== undefined && this.#hasProfile(previous) ? previous : this.#activeProfile" "$1" &&
+    grep -qF "if (form) this.#applyProfilePolicy(shown, form)" "$1" &&
+    grep -B3 "^            this.#activeProfile = value$" "$1" | grep -qF "if (form) this.#applyProfilePolicy(shown, form)"' sh "$TEE"
+check "TEESimulator delete removes the profile the dialog shows" sh -c '
+    grep -qF "if (!this.#deleteProfile(shown)) return" "$1" && grep -qF "delete this.#teeConfig.profiles[name]" "$1"' sh "$TEE"
+check "TEESimulator profile lookups use own properties (no \`in this.#teeConfig.profiles\`)" sh -c '
+    [ "$(grep -c "in this\.#teeConfig\.profiles" "$1")" = 0 ] && grep -qF "return Object.hasOwn(this.#teeConfig.profiles, name)" "$1"' sh "$TEE"
 # a failed module download leaves no partial module.zip behind
 check "update.ts deletes the partial module.zip when the download throws" \
     sh -c 'grep -A2 "await this.#downloadFile(url, \`\${tmpDir}/module.zip\`).catch(async (error) => {" "$1" | grep -qF "await file.delete(\`\${tmpDir}/module.zip\`).catch(() => {})"' sh "$SRC/update.ts"

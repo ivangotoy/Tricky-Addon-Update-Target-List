@@ -82,18 +82,20 @@ export class ConfigTeeSimulator extends Config {
         options: [],
         defaultValue: 'default',
         onLoad: () => [...Object.keys(this.#teeConfig.profiles), NEW_PROFILE],
-        onSelect: (value, editor, context) => {
+        onSelect: (value, editor, context, previous) => {
           if (value === NEW_PROFILE) {
             const name = this.#createProfile()
             editor.setPolicy(this.#profileWithMeta(name))
             return name
           }
           if (context === 'global') {
+            // the form still holds the values of the profile shown before the switch (form.profile is already `value`)
             const form = editor.getPolicy()
+            const shown = previous !== undefined && this.#hasProfile(previous) ? previous : this.#activeProfile
             // an invalid form (null) must not strip the profile
-            if (form) this.#applyProfilePolicy(typeof form?.profile === 'string' ? form.profile : this.#activeProfile, form)
+            if (form) this.#applyProfilePolicy(shown, form)
+            this.#activeProfile = value
           }
-          this.#activeProfile = value
           editor.setPolicy(this.#profileWithMeta(value))
           return value
         },
@@ -162,7 +164,9 @@ export class ConfigTeeSimulator extends Config {
         variant: 'error',
         disabled: () => Object.keys(this.#teeConfig.profiles).length <= 1,
         onClick: (editor) => {
-          if (!this.#deleteProfile()) return
+          // delete the profile this dialog shows, not the one last picked in another dialog
+          const shown = (editor.getField('profile') as (HTMLElement & { value?: string }) | undefined)?.value ?? this.#activeProfile
+          if (!this.#deleteProfile(shown)) return
           editor.setPolicy(this.#profileWithMeta(this.#activeProfile))
         },
       },
@@ -230,7 +234,7 @@ export class ConfigTeeSimulator extends Config {
       const policy = value as Policy
       if (typeof policy.profile !== 'string') continue
       const profileName = this.#resolveRename(policy, '')
-      if (!(profileName in this.#teeConfig.profiles)) continue
+      if (!this.#hasProfile(profileName)) continue
       this.#assignApp(section, profileName)
       if (this.#sectionBaseline.get(section) !== JSON.stringify(value)) {
         this.#applyProfilePolicy(profileName, policy)
@@ -257,7 +261,7 @@ export class ConfigTeeSimulator extends Config {
     for (const [section, value] of Object.entries(this.get())) {
       if (section === 'target' || section === 'default_policy' || Array.isArray(value)) continue
       const profileName = (value as Policy).profile
-      if (typeof profileName !== 'string' || !(profileName in this.#teeConfig.profiles)) continue
+      if (typeof profileName !== 'string' || !this.#hasProfile(profileName)) continue
       const fresh = this.#profileWithMeta(profileName)
       this.set(section, fresh)
       this.#sectionBaseline.set(section, JSON.stringify(fresh))
@@ -340,7 +344,7 @@ export class ConfigTeeSimulator extends Config {
     clone.apps = []
     let i = 1
     let name = `profile${i}`
-    while (name in this.#teeConfig.profiles) name = `profile${++i}`
+    while (this.#hasProfile(name)) name = `profile${++i}`
     this.#teeConfig.profiles[name] = clone
     return name
   }
@@ -358,7 +362,7 @@ export class ConfigTeeSimulator extends Config {
 
   #renameProfile(from: string, to: string): boolean {
     if (from === to) return true
-    if (to in this.#teeConfig.profiles) return false
+    if (this.#hasProfile(to)) return false
     const rebuilt: Record<string, TeeProfile> = {}
     for (const [key, value] of Object.entries(this.#teeConfig.profiles)) {
       rebuilt[key === from ? to : key] = value
@@ -368,11 +372,11 @@ export class ConfigTeeSimulator extends Config {
   }
 
   #resolveRename(policy: Policy, fallback: string): string {
-    const current = typeof policy.profile === 'string' && policy.profile in this.#teeConfig.profiles
+    const current = typeof policy.profile === 'string' && this.#hasProfile(policy.profile)
       ? policy.profile
       : fallback
     const requested = typeof policy.profile_name === 'string' ? policy.profile_name.trim() : ''
-    if (current in this.#teeConfig.profiles && requested && requested !== current && !(requested in this.#teeConfig.profiles)) {
+    if (this.#hasProfile(current) && requested && requested !== current && !this.#hasProfile(requested)) {
       this.#renameProfile(current, requested)
       this.#syncSectionRename(current, requested)
       return requested
@@ -380,11 +384,16 @@ export class ConfigTeeSimulator extends Config {
     return current
   }
 
-  #deleteProfile(): boolean {
-    if (Object.keys(this.#teeConfig.profiles).length <= 1) return false
-    delete this.#teeConfig.profiles[this.#activeProfile]
-    this.#activeProfile = Object.keys(this.#teeConfig.profiles)[0]
+  #deleteProfile(name: string): boolean {
+    if (Object.keys(this.#teeConfig.profiles).length <= 1 || !this.#hasProfile(name)) return false
+    delete this.#teeConfig.profiles[name]
+    if (!this.#hasProfile(this.#activeProfile)) this.#activeProfile = Object.keys(this.#teeConfig.profiles)[0]
     return true
+  }
+
+  // own profiles only: `in` also accepts inherited names such as constructor or toString
+  #hasProfile(name: string): boolean {
+    return Object.hasOwn(this.#teeConfig.profiles, name)
   }
 
   #assignApp(pkg: string, profileName: string): void {

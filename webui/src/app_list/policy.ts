@@ -7,6 +7,8 @@ export class PolicyEditor {
   readonly #fields: Map<string, MdOutlinedTextField | MdSwitch | HTMLElement>
   readonly #schema: PolicySchema
   readonly #context: 'global' | 'perApp'
+  // value each select shows (set by setPolicy / refreshSelects / a change), handed to onSelect as `previous`
+  readonly #selectValues = new Map<string, string>()
 
   constructor(fieldsEl: HTMLElement, schema: PolicySchema, context: 'global' | 'perApp' = 'global') {
     this.#schema = schema
@@ -47,7 +49,8 @@ export class PolicyEditor {
         const field = this.#fields.get(key) as MdOutlinedSelect | undefined
         if (!field) continue
         field.addEventListener('change', () => {
-          const replacement = meta.onSelect!(field.value, this, this.#context)
+          const replacement = meta.onSelect!(field.value, this, this.#context, this.#selectValues.get(key))
+          this.#selectValues.set(key, field.value)
           this.refreshSelects(typeof replacement === 'string' ? replacement : undefined)
         })
         continue
@@ -149,6 +152,7 @@ export class PolicyEditor {
         : this.#context === 'global'
           ? (options[0] ?? '')
           : (options.includes(current) ? current : fallback)
+      this.#selectValues.set(key, selected)
       field.innerHTML = options.map(opt =>
         `<md-select-option value="${opt}" display-text="${i18n.t(meta.optionLabels?.[opt] ?? opt)}"${opt === selected ? ' selected' : ''}>
           <div slot="headline">${i18n.t(meta.optionLabels?.[opt] ?? opt)}</div>
@@ -181,6 +185,7 @@ export class PolicyEditor {
         if (!field) continue
         const value = String(policy?.[key] ?? meta.defaultValue ?? '')
         field.value = value
+        this.#selectValues.set(key, value)
         for (const opt of field.querySelectorAll<HTMLElement>('md-select-option')) {
           if (opt.getAttribute('value') === value) opt.setAttribute('selected', '')
           else opt.removeAttribute('selected')
