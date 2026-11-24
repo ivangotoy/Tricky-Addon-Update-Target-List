@@ -92,7 +92,7 @@ const LEGACY_POLICY_SCHEMA: PolicySchema = new PolicySchema({
   os_patch: {
     defaultValue: 'no',
     options: ['prop', 'no'],
-    maxlength: 6,
+    maxlength: 14,
     placeholder: 'YYYYMM',
     perAppPolicy: false,
     validate: (v) => !v || PATCH_VALUE.test(v) || PATCH_VALUE_HINT,
@@ -100,7 +100,7 @@ const LEGACY_POLICY_SCHEMA: PolicySchema = new PolicySchema({
   vendor_patch: {
     defaultValue: 'no',
     options: ['prop', 'no'],
-    maxlength: 8,
+    maxlength: 14,
     placeholder: 'YYYYMMDD',
     perAppPolicy: false,
     validate: (v) => !v || PATCH_VALUE.test(v) || PATCH_VALUE_HINT,
@@ -108,7 +108,7 @@ const LEGACY_POLICY_SCHEMA: PolicySchema = new PolicySchema({
   boot_patch: {
     defaultValue: 'no',
     options: ['prop', 'no'],
-    maxlength: 8,
+    maxlength: 14,
     placeholder: 'YYYYMMDD',
     perAppPolicy: false,
     validate: (v) => !v || PATCH_VALUE.test(v) || PATCH_VALUE_HINT,

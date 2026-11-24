@@ -467,6 +467,7 @@ check "config_legacy.ts keeps security_patch.txt per-package blocks" sh -c '
     grep -qF "const policy = parseSecurityPatch(globalPart)" "$1" &&
     grep -qF "if (globalPart || this.#packageBlocks) {" "$1" &&
     grep -qF "[globalPart, this.#packageBlocks].filter(Boolean).join(" "$1"' sh "$LEG"
+check "config_legacy.ts patch fields allow 14 characters (device_default, YYYY-MM-DD)" [ "$(grep -c 'maxlength: 14,' "$LEG")" = 3 -a "$(grep -c 'maxlength: [68],' "$LEG")" = 0 ]
 # a failed module download leaves no partial module.zip behind
 check "update.ts deletes the partial module.zip when the download throws" \
     sh -c 'grep -A2 "await this.#downloadFile(url, \`\${tmpDir}/module.zip\`).catch(async (error) => {" "$1" | grep -qF "await file.delete(\`\${tmpDir}/module.zip\`).catch(() => {})"' sh "$SRC/update.ts"
