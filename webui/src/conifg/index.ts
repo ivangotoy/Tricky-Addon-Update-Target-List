@@ -1,5 +1,4 @@
 import { Cli } from '../cli'
-import { file } from '../file'
 import { OMK_MOD_ID, TEES_MOD_ID } from '../constant'
 import type { Config } from './config'
 import { ConfigIni } from './official/config_ini'
@@ -9,11 +8,9 @@ import { ConfigTeeSimulator } from './teesimulator/config_teesimulator'
 
 export const cli = new Cli()
 
-// config.ini when it exists, or on a fresh install without target.txt; an existing target.txt without config.ini stays on it
-async function usesConfigIni(): Promise<boolean> {
-  if (await file.exist('/data/adb/tricky_store/config.ini').catch(() => false)) return true
-  return !(await file.exist('/data/adb/tricky_store/target.txt').catch(() => false))
-}
+// TrickyStore forks that keep target.txt + security_patch.txt whatever their versionCode: upstream's own fork test
+// (first config.ini support) on module.prop; matched against its values, so a stale config.ini never switches them to ini
+const TS_FORK_PATTERN = /James|beakthoven|JingMatrix/
 
 async function createConfig(tsInfo: Record<string, string>): Promise<Config> {
   const modId = tsInfo.id
@@ -23,8 +20,7 @@ async function createConfig(tsInfo: Record<string, string>): Promise<Config> {
       return new ConfigOhMyKeyMint()      // Oh My Keymint
     case modId === TEES_MOD_ID:
       return new ConfigTeeSimulator()     // Tee Simulator
-    // a build with versionCode >= 246 that still uses target.txt has no config.ini: keep writing what it reads
-    case ConfigIni.support(versionCode) && await usesConfigIni():
+    case ConfigIni.support(versionCode) && !TS_FORK_PATTERN.test(Object.values(tsInfo).join('\n')):
       return new ConfigIni()              // config.ini
     default:
       return new ConfigLegacy()           // target.txt + security_patch.txt

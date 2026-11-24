@@ -453,13 +453,31 @@ LEG="$SRC/conifg/official/config_legacy.ts"
 check "config_legacy.ts patch fields use the documented security_patch.txt grammar" sh -c '
     grep -qF "const PATCH_VALUE = /^(?:prop|no|device_default|(?:\\d{4}|yyyy)-?(?:\\d{2}|mm)(?:-?(?:\\d{2}|dd))?)\$/i" "$1" &&
     [ "$(grep -c "validate: (v) => !v || PATCH_VALUE.test(v) || PATCH_VALUE_HINT," "$1")" = 3 ]' sh "$LEG"
-# backend choice: a tricky_store build with versionCode >= 246 that still uses target.txt (no config.ini) keeps the
-# target.txt + security_patch.txt backend; config.ini when it exists or on a fresh install without target.txt
-check "conifg/index.ts picks config.ini only when it exists or target.txt does not" sh -c '
-    grep -qF "case ConfigIni.support(versionCode) && await usesConfigIni():" "$1" &&
-    grep -qF "if (await file.exist('"'"'/data/adb/tricky_store/config.ini'"'"').catch(() => false)) return true" "$1" &&
-    grep -qF "return !(await file.exist('"'"'/data/adb/tricky_store/target.txt'"'"').catch(() => false))" "$1" &&
-    grep -qF "return await createConfig(await cli.getTrickyStoreInfo())" "$1"' sh "$SRC/conifg/index.ts"
+# backend choice: a TrickyStore build matching the fork pattern upstream used never gets config.ini (target.txt +
+# security_patch.txt stay live even next to a stale config.ini); other builds: versionCode >= 246 -> config.ini.
+# Source check of the selection line, plus a node replay of the rule with index.ts's pattern and config_ini.ts's threshold.
+IDX="$SRC/conifg/index.ts"
+check "conifg/index.ts: fork pattern -> legacy whatever files exist, else versionCode >= 246 -> ini" sh -c '
+    grep -qF "const TS_FORK_PATTERN = /James|beakthoven|JingMatrix/" "$1" &&
+    grep -qF "case ConfigIni.support(versionCode) && !TS_FORK_PATTERN.test(Object.values(tsInfo).join('"'"'\\n'"'"')):" "$1" &&
+    [ "$(grep -cF -e "file.exist" -e "/data/adb/tricky_store/" "$1")" = 0 ] &&
+    grep -qF "return await createConfig(await cli.getTrickyStoreInfo())" "$1"' sh "$IDX"
+if have node; then
+    # replay the decision with the real pattern and the real ConfigIni.support threshold
+    PAT=$(sed -n 's|^const TS_FORK_PATTERN = \(/.*/\)$|\1|p' "$IDX")
+    MIN=$(sed -n 's|^const MIN_SUPPORTED_VERSION = \([0-9]*\)$|\1|p' "$SRC/conifg/official/config_ini.ts")
+    check "backend replay: fork 255 -> legacy, official 246 -> ini, official 245 -> legacy" node -e '
+        const pat = eval(process.argv[1]), min = Number(process.argv[2])
+        const pick = p => (parseInt(p.versionCode, 10) >= min && !pat.test(Object.values(p).join("\n"))) ? "ini" : "legacy"
+        const cases = [
+          [{ id: "tricky_store", name: "Tricky Store OSS", versionCode: "255", author: "beakthoven" }, "legacy"],
+          [{ id: "tricky_store", name: "Tricky Store", versionCode: "246", author: "example" }, "ini"],
+          [{ id: "tricky_store", name: "Tricky Store", versionCode: "245", author: "example" }, "legacy"],
+        ]
+        process.exit(cases.every(([p, want]) => pick(p) === want) && min === 246 ? 0 : 1)' "$PAT" "$MIN"
+else
+    sk "backend replay (no node)"
+fi
 # security_patch.txt per-package blocks ([com.example.app] ...) are kept verbatim: only the lines above the first header
 # are parsed as the default policy, and the file is not deleted while blocks exist
 check "config_legacy.ts keeps security_patch.txt per-package blocks" sh -c '
