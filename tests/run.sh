@@ -392,6 +392,20 @@ check "no un-awaited, uncaught config.write() left in webui/src" [ "$(grep -rn '
 # switching the update channel to "disable" hides an update card that is already shown (its Install would do nothing)
 check "main.ts hides the update card when the channel is disabled" \
     sh -c 'grep -A3 "  if (channel === '"'"'disable'"'"') {" "$1" | grep -qF "updateCard.classList.add('"'"'hide'"'"')"' sh "$SRC/main.ts"
+# policy text fields: isValid() checks them (text fields leave type unset) and marks the failing field; TEESimulator
+# fields keep their case and inner spaces; an invalid form never reaches #applyProfilePolicy; dev fixtures pass the validators
+PE="$SRC/app_list/policy.ts"; TEE="$SRC/conifg/teesimulator/config_teesimulator.ts"
+check "policy.ts isValid() validates text fields (type unset) and marks the failing field" sh -c '
+    grep -qF "if (meta.type !== undefined && meta.type !== '"'"'text'"'"') continue" "$1" &&
+    grep -qF "const result = val ? (meta as TextFieldMeta).validate(val) : true" "$1" && grep -qF "field.error = true" "$1" &&
+    [ "$(grep -c "if (meta.type !== '"'"'text'"'"') continue" "$1")" = 0 ]' sh "$PE"
+check "policy.ts lower-cases and rewrites only fields without caseSensitive" \
+    grep -qF 'if (!textMeta.caseSensitive) field.value = val' "$PE"
+check "TEESimulator text fields are caseSensitive (profile name, 3 patch levels, OS version, 9 identity fields)" \
+    [ "$(grep -c 'caseSensitive: true' "$TEE")" = 14 ]
+check "TEESimulator profile switch applies the form only when it is valid" grep -qF 'if (form) this.#applyProfilePolicy(' "$TEE"
+check "dev fixtures carry no YYYYMM05 (rejected by the ini/legacy YYYYMMDD validator)" \
+    [ "$(cat "$SRC/conifg/official/config_ini.ts" "$SRC/app_list/app_list.ts" | grep -c YYYYMM05)" = 0 ]
 # a failed module download leaves no partial module.zip behind
 check "update.ts deletes the partial module.zip when the download throws" \
     sh -c 'grep -A2 "await this.#downloadFile(url, \`\${tmpDir}/module.zip\`).catch(async (error) => {" "$1" | grep -qF "await file.delete(\`\${tmpDir}/module.zip\`).catch(() => {})"' sh "$SRC/update.ts"

@@ -14,6 +14,8 @@ export interface PolicyEditorApi {
 export interface TextFieldMeta {
   type?: 'text'
   label?: string
+  // keep the typed case and inner spaces (input is otherwise trimmed and lower-cased while typing)
+  caseSensitive?: boolean
   required?: boolean
   defaultValue?: string
   options?: string[]

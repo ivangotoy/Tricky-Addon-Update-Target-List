@@ -521,7 +521,7 @@ export class AppList {
       ]
     }
     configData['com.google.android.gms'] = {
-      os_patch: 'prop', vendor_patch: 'YYYYMM05', boot_patch: '20260505',
+      os_patch: 'prop', vendor_patch: '20260505', boot_patch: '20260505',
     }
     configData['com.example.banking'] = {
       os_patch: 'prop', vendor_patch: '20260601', boot_patch: 'prop',

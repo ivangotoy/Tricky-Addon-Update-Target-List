@@ -123,7 +123,7 @@ export class ConfigIni extends Config {
           'com.example.wallet!',
           'com.example.social?',
         ],
-        'com.google.android.gms': { os_patch: 'prop', vendor_patch: 'YYYYMM05', boot_patch: '20260505' },
+        'com.google.android.gms': { os_patch: 'prop', vendor_patch: '20260505', boot_patch: '20260505' },
         'com.example.banking': { os_patch: 'prop', vendor_patch: '20260601', boot_patch: 'prop' },
       })
       return

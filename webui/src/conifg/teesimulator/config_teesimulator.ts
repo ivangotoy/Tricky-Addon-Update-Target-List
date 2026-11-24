@@ -90,7 +90,8 @@ export class ConfigTeeSimulator extends Config {
           }
           if (context === 'global') {
             const form = editor.getPolicy()
-            this.#applyProfilePolicy(typeof form?.profile === 'string' ? form.profile : this.#activeProfile, form)
+            // an invalid form (null) must not strip the profile
+            if (form) this.#applyProfilePolicy(typeof form?.profile === 'string' ? form.profile : this.#activeProfile, form)
           }
           this.#activeProfile = value
           editor.setPolicy(this.#profileWithMeta(value))
@@ -100,6 +101,7 @@ export class ConfigTeeSimulator extends Config {
       profile_name: {
         label: 'profile_name_label',
         defaultValue: '',
+        caseSensitive: true,
         validate: (v) => !v || (PROFILE_NAME_PATTERN.test(v) && v !== NEW_PROFILE) || 'a-z A-Z 0-9 _ . -',
       },
       mode: {
@@ -116,6 +118,7 @@ export class ConfigTeeSimulator extends Config {
       },
       os_patch: {
         label: 'System Patch',
+        caseSensitive: true,
         defaultValue: 'today',
         options: ['today', 'harvested', 'system_property', 'no'],
         placeholder: 'YYYY-MM-DD',
@@ -123,6 +126,7 @@ export class ConfigTeeSimulator extends Config {
       },
       vendor_patch: {
         label: 'Vendor Patch',
+        caseSensitive: true,
         defaultValue: 'YYYY-MM-05',
         options: ['today', 'harvested', 'system_property', 'no'],
         placeholder: 'YYYY-MM-05',
@@ -130,6 +134,7 @@ export class ConfigTeeSimulator extends Config {
       },
       boot_patch: {
         label: 'Boot Patch',
+        caseSensitive: true,
         defaultValue: 'YYYY-MM-05',
         options: ['today', 'harvested', 'system_property', 'no'],
         placeholder: 'YYYY-MM-05',
@@ -137,19 +142,20 @@ export class ConfigTeeSimulator extends Config {
       },
       os_version: {
         label: 'OS Version',
+        caseSensitive: true,
         options: ['harvested', 'system_property', 'no'],
         placeholder: '16 or 16.0.0',
         validate: (v) => !v || OS_VERSION_PATTERN.test(v) || 'harvested | system_property | no | version',
       },
-      brand: { label: 'Brand', validate: () => true },
-      device: { label: 'Device', validate: () => true },
-      product: { label: 'Product', validate: () => true },
-      manufacturer: { label: 'Manufacturer', validate: () => true },
-      model: { label: 'Model', validate: () => true },
-      serial: { label: 'Serial', validate: () => true },
-      imei: { label: 'IMEI', validate: () => true },
-      meid: { label: 'MEID', validate: () => true },
-      imei2: { label: 'IMEI 2', validate: () => true },
+      brand: { label: 'Brand', caseSensitive: true, validate: () => true },
+      device: { label: 'Device', caseSensitive: true, validate: () => true },
+      product: { label: 'Product', caseSensitive: true, validate: () => true },
+      manufacturer: { label: 'Manufacturer', caseSensitive: true, validate: () => true },
+      model: { label: 'Model', caseSensitive: true, validate: () => true },
+      serial: { label: 'Serial', caseSensitive: true, validate: () => true },
+      imei: { label: 'IMEI', caseSensitive: true, validate: () => true },
+      meid: { label: 'MEID', caseSensitive: true, validate: () => true },
+      imei2: { label: 'IMEI 2', caseSensitive: true, validate: () => true },
       delete_profile: {
         type: 'button',
         label: 'profile_delete',

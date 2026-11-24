@@ -58,8 +58,8 @@ export class PolicyEditor {
       if (!field) continue
       const textMeta = meta as TextFieldMeta
       field.oninput = () => {
-        const val = field.value.trim().toLowerCase()
-        field.value = val
+        const val = textMeta.caseSensitive ? field.value.trim() : field.value.trim().toLowerCase()
+        if (!textMeta.caseSensitive) field.value = val
         const result = textMeta.validate(val)
         if (result === true) {
           field.error = false
@@ -72,14 +72,21 @@ export class PolicyEditor {
   }
 
   isValid(): boolean {
+    let valid = true
     for (const [key, meta] of this.#schema.getFields()) {
-      if (meta.type !== 'text') continue
+      // text fields leave type unset
+      if (meta.type !== undefined && meta.type !== 'text') continue
       const field = this.#fields.get(key) as MdOutlinedTextField | undefined
       if (!field) continue
       const val = field.value.trim()
-      if (val && (meta as TextFieldMeta).validate(val) !== true) return false
+      const result = val ? (meta as TextFieldMeta).validate(val) : true
+      if (result !== true) {
+        field.error = true
+        if (typeof result === 'string') field.errorText = result
+        valid = false
+      }
     }
-    return true
+    return valid
   }
 
   static #renderCount = 0
