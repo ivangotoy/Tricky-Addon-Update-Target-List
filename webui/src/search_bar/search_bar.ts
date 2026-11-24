@@ -40,6 +40,11 @@ export class SearchBar {
   }
 
   show(): void {
+    // already open (Ctrl+F with the focus elsewhere): a second 'search' entry would make one Back press do nothing
+    if (!this.#searchBar.classList.contains('hide')) {
+      this.#searchBar.focus()
+      return
+    }
     this.#searchBar.classList.remove('hide')
     this.#searchHide.forEach(e => e.classList.add('hide'))
     this.#searchBar.focus()
