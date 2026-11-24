@@ -99,7 +99,7 @@ export class UpdateManager {
 
   async #checkStableUpdate(): Promise<UpdateInfo> {
     try {
-      const response = await fetch(UPDATE_JSON_URL)
+      const response = await fetch(UPDATE_JSON_URL, { signal: AbortSignal.timeout(30000) })
       if (!response.ok) return { available: false, version: null, versionCode: null }
 
       const data = (await response.json()) as { versionCode: number; version: string }
@@ -118,7 +118,7 @@ export class UpdateManager {
   }
 
   async #performStableUpdate(): Promise<boolean> {
-    const response = await fetch(UPDATE_JSON_URL)
+    const response = await fetch(UPDATE_JSON_URL, { signal: AbortSignal.timeout(30000) })
     if (!response.ok) throw new Error('Failed to fetch stable update info')
     const data = (await response.json()) as { zipUrl: string; zipSha256?: unknown }
     return this.#downloadAndInstall(data.zipUrl, data.zipSha256)
@@ -126,12 +126,12 @@ export class UpdateManager {
 
   async #getStableChangelog(): Promise<string> {
     try {
-      const response = await fetch(UPDATE_JSON_URL)
+      const response = await fetch(UPDATE_JSON_URL, { signal: AbortSignal.timeout(30000) })
       if (!response.ok) return 'Failed to fetch changelog'
       const data = (await response.json()) as { version?: string; changelog?: string }
       if (!data.changelog || !data.version) return 'No changelog available'
 
-      const changelogResp = await fetch(data.changelog)
+      const changelogResp = await fetch(data.changelog, { signal: AbortSignal.timeout(30000) })
       if (!changelogResp.ok) return 'Failed to fetch changelog'
       const fullChangelog = await changelogResp.text()
 

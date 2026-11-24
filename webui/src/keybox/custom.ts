@@ -125,7 +125,7 @@ export class CustomKeyboxProvider {
         return
       }
 
-      const response = await fetch(link)
+      const response = await fetch(link, { signal: AbortSignal.timeout(30000) })
       if (!response.ok) {
         this.#snackbar.show(i18n.t('prompt_custom_fetch_error') + `: ${response.status}`, false)
         return

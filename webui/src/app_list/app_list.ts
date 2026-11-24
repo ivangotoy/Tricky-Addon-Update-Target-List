@@ -181,12 +181,12 @@ export class AppList {
       let response: Response | null = null
 
       try {
-        response = await fetch(link)
+        response = await fetch(link, { signal: AbortSignal.timeout(30000) })
       } catch {}
 
       if (!response || !response.ok) {
         try {
-          response = await fetch(`https://gh.sevencdn.com/${link}`)
+          response = await fetch(`https://gh.sevencdn.com/${link}`, { signal: AbortSignal.timeout(30000) })
         } catch {}
       }
 

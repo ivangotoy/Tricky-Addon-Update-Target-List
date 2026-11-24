@@ -373,6 +373,11 @@ check "languages.json keys are plain language tags" \
 check "window.open only behind import.meta.env.DEV (cli.ts linkRedirect, bootstrap.ts)" sh -c '
     [ "$(grep -rn "window\.open(" "$1" | grep -v "keybox/repo/" | grep -cv "errno !== 0 && import\.meta\.env\.DEV) window\.open(")" = 0 ] &&
     [ "$(grep -c "errno !== 0 && import\.meta\.env\.DEV) window\.open(" "$1/cli.ts" "$1/bootstrap.ts" | grep -c ":1\$")" = 2 ]' sh "$SRC"
+# remote fetches (update.json, changelog, guide, exclude list, custom keybox providers) end after 30 s instead of
+# leaving a spinner or a dialog waiting forever; bundled ./locales reads and the unused locale hot-update are not network
+check "every live remote fetch() has AbortSignal.timeout (9 in update.ts, app_list.ts, dialog/i18n.ts, custom.ts)" sh -c '
+    cd "$1" && L=$(grep -n "await fetch(" update.ts app_list/app_list.ts dialog/i18n.ts keybox/custom.ts | grep -vF -e "fetch('"'"'./locales/" -e "fetch(url)" -e "fetch(mirrorUrl)")
+    [ "$(printf "%s\n" "$L" | grep -c "AbortSignal\.timeout(30000) })")" = 9 ] && [ "$(printf "%s\n" "$L" | grep -cv "AbortSignal\.timeout(")" = 0 ]' sh "$SRC"
 # a failed module download leaves no partial module.zip behind
 check "update.ts deletes the partial module.zip when the download throws" \
     sh -c 'grep -A2 "await this.#downloadFile(url, \`\${tmpDir}/module.zip\`).catch(async (error) => {" "$1" | grep -qF "await file.delete(\`\${tmpDir}/module.zip\`).catch(() => {})"' sh "$SRC/update.ts"
