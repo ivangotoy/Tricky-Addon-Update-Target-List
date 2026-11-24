@@ -368,6 +368,11 @@ check "Keybox > Local reads a .xml file picked from Download/ into keybox.xml" s
 LANG_KEYS=$(grep -o '"[^"]*": ' "$ROOT/webui/public/locales/languages.json")
 check "languages.json keys are plain language tags" \
     [ -n "$LANG_KEYS" -a "$(printf '%s\n' "$LANG_KEYS" | grep -cvE '^"[a-z]{2,3}(-[A-Z]{2})?": $')" = 0 ]
+# window.open in a manager WebView without a navigation guard loads the page in that WebView, next to the
+# root bridge: the am start fallbacks open a window only on the dev server
+check "window.open only behind import.meta.env.DEV (cli.ts linkRedirect, bootstrap.ts)" sh -c '
+    [ "$(grep -rn "window\.open(" "$1" | grep -v "keybox/repo/" | grep -cv "errno !== 0 && import\.meta\.env\.DEV) window\.open(")" = 0 ] &&
+    [ "$(grep -c "errno !== 0 && import\.meta\.env\.DEV) window\.open(" "$1/cli.ts" "$1/bootstrap.ts" | grep -c ":1\$")" = 2 ]' sh "$SRC"
 # a failed module download leaves no partial module.zip behind
 check "update.ts deletes the partial module.zip when the download throws" \
     sh -c 'grep -A2 "await this.#downloadFile(url, \`\${tmpDir}/module.zip\`).catch(async (error) => {" "$1" | grep -qF "await file.delete(\`\${tmpDir}/module.zip\`).catch(() => {})"' sh "$SRC/update.ts"

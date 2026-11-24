@@ -6,7 +6,7 @@ if (!isSupported()) {
   document.querySelector<HTMLDivElement>('#app')!.innerHTML = renderBlockingPage()
   document.getElementById('update-webview')!.onclick = async () => {
     const result = await exec(`am start -a android.intent.action.VIEW -d '${UPDATE_URL}'`)
-    if (result.errno !== 0) window.open(UPDATE_URL, '_blank')
+    if (result.errno !== 0 && import.meta.env.DEV) window.open(UPDATE_URL, '_blank')
   }
 } else {
   try {

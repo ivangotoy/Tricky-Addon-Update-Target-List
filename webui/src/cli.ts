@@ -87,7 +87,8 @@ export class Cli {
     if (!/^https?:\/\//.test(url)) return
     const quote = (s: string) => `'${s.replace(/'/g, "'\\''")}'`
     const result = await exec(`am start -a android.intent.action.VIEW -d ${quote(url)}`)
-    if (result.errno !== 0) window.open(url, '_blank')
+    // dev server only: in a manager window.open can load the page in this WebView, which carries the root bridge
+    if (result.errno !== 0 && import.meta.env.DEV) window.open(url, '_blank')
   }
 
   async transformFile(src: string, dst: string, command: string): Promise<void> {
