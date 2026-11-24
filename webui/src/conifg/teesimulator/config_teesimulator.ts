@@ -255,8 +255,12 @@ export class ConfigTeeSimulator extends Config {
       const apps = Array.isArray(profile.apps) ? profile.apps : []
       profile.apps = apps.filter((app): app is string => typeof app === 'string' && remainingApps.delete(app))
     }
-    const defaultProfile = this.#defaultProfile()
-    defaultProfile.apps = [...(Array.isArray(defaultProfile.apps) ? defaultProfile.apps : []), ...remainingApps]
+    // targeted apps in no profile go to default; default is recreated only for them, so a deleted or renamed
+    // default profile does not come back on every save
+    if (remainingApps.size > 0) {
+      const defaultProfile = this.#defaultProfile()
+      defaultProfile.apps = [...(Array.isArray(defaultProfile.apps) ? defaultProfile.apps : []), ...remainingApps]
+    }
 
     for (const [section, value] of Object.entries(this.get())) {
       if (section === 'target' || section === 'default_policy' || Array.isArray(value)) continue

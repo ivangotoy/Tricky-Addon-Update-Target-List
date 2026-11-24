@@ -425,6 +425,8 @@ check "per-app dialog shows config.perAppDefault() for an app without a section;
     grep -qF "this.#policyEditor.setPolicy(hasPolicy ? section : this.#config.perAppDefault())" "$1/app_list/app_list.ts" &&
     grep -A3 "  perAppDefault(): Policy | null {" "$1/conifg/config.ts" | grep -qx "    return null" &&
     grep -A3 "  override perAppDefault(): Policy {" "$1/conifg/teesimulator/config_teesimulator.ts" | grep -qF "return this.#profileWithMeta(name)"' sh "$SRC"
+check "TEESimulator write() recreates the default profile only for apps in no profile" \
+    sh -c 'grep -A1 "^    if (remainingApps.size > 0) {" "$1" | grep -qF "const defaultProfile = this.#defaultProfile()"' sh "$TEE"
 # a failed module download leaves no partial module.zip behind
 check "update.ts deletes the partial module.zip when the download throws" \
     sh -c 'grep -A2 "await this.#downloadFile(url, \`\${tmpDir}/module.zip\`).catch(async (error) => {" "$1" | grep -qF "await file.delete(\`\${tmpDir}/module.zip\`).catch(() => {})"' sh "$SRC/update.ts"
