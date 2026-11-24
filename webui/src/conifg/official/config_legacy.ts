@@ -56,6 +56,13 @@ function parseSecurityPatch(raw: string): Policy | null {
   return Object.keys(policy).length > 0 ? policy : null
 }
 
+// per-package blocks ([package.name] headers) start at the first header line; they are not edited here and are kept verbatim
+function splitPackageBlocks(raw: string): [string, string] {
+  const lines = raw.split('\n')
+  const idx = lines.findIndex(line => /^\[[^\]]+\]$/.test(line.trim()))
+  return idx === -1 ? [raw, ''] : [lines.slice(0, idx).join('\n'), lines.slice(idx).join('\n').trim()]
+}
+
 function serializeTarget(target: string[]): string {
   return target.join('\n')
 }
@@ -138,9 +145,12 @@ export class ConfigLegacy extends Config {
   protected override readonly perAppConfig: boolean = true
 
   override readonly policySchema: PolicySchema = LEGACY_POLICY_SCHEMA
+  // security_patch.txt from its first [package.name] header on, written back unchanged
+  #packageBlocks = ''
 
   override async read(): Promise<void> {
     this.clearReadFailure()
+    this.#packageBlocks = ''
     const data: ConfigData = {}
 
     if (isDev()) {
@@ -161,7 +171,9 @@ export class ConfigLegacy extends Config {
 
       try {
         const spRaw = await file.read(this.SECURITY_PATCH_FILE)
-        const policy = parseSecurityPatch(spRaw)
+        const [globalPart, packageBlocks] = splitPackageBlocks(spRaw)
+        this.#packageBlocks = packageBlocks
+        const policy = parseSecurityPatch(globalPart)
         if (policy) data.default_policy = policy
       } catch {
         await this.readFailed(this.SECURITY_PATCH_FILE)
@@ -203,8 +215,9 @@ export class ConfigLegacy extends Config {
       writeTasks.push(file.write(this.CONFIG_FILE, serializeTarget(data.target)))
     }
 
-    if (data.default_policy && !isNoOpPolicy(data.default_policy)) {
-      writeTasks.push(file.write(this.SECURITY_PATCH_FILE, serializeSecurityPatch(data.default_policy)))
+    const globalPart = data.default_policy && !isNoOpPolicy(data.default_policy) ? serializeSecurityPatch(data.default_policy) : ''
+    if (globalPart || this.#packageBlocks) {
+      writeTasks.push(file.write(this.SECURITY_PATCH_FILE, [globalPart, this.#packageBlocks].filter(Boolean).join('\n\n')))
     } else {
       writeTasks.push(file.delete(this.SECURITY_PATCH_FILE))
     }

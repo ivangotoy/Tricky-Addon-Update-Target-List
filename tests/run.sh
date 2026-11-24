@@ -460,6 +460,13 @@ check "conifg/index.ts picks config.ini only when it exists or target.txt does n
     grep -qF "if (await file.exist('"'"'/data/adb/tricky_store/config.ini'"'"').catch(() => false)) return true" "$1" &&
     grep -qF "return !(await file.exist('"'"'/data/adb/tricky_store/target.txt'"'"').catch(() => false))" "$1" &&
     grep -qF "return await createConfig(await cli.getTrickyStoreInfo())" "$1"' sh "$SRC/conifg/index.ts"
+# security_patch.txt per-package blocks ([com.example.app] ...) are kept verbatim: only the lines above the first header
+# are parsed as the default policy, and the file is not deleted while blocks exist
+check "config_legacy.ts keeps security_patch.txt per-package blocks" sh -c '
+    grep -qF "const [globalPart, packageBlocks] = splitPackageBlocks(spRaw)" "$1" &&
+    grep -qF "const policy = parseSecurityPatch(globalPart)" "$1" &&
+    grep -qF "if (globalPart || this.#packageBlocks) {" "$1" &&
+    grep -qF "[globalPart, this.#packageBlocks].filter(Boolean).join(" "$1"' sh "$LEG"
 # a failed module download leaves no partial module.zip behind
 check "update.ts deletes the partial module.zip when the download throws" \
     sh -c 'grep -A2 "await this.#downloadFile(url, \`\${tmpDir}/module.zip\`).catch(async (error) => {" "$1" | grep -qF "await file.delete(\`\${tmpDir}/module.zip\`).catch(() => {})"' sh "$SRC/update.ts"
