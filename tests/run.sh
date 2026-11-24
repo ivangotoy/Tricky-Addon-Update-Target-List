@@ -444,6 +444,9 @@ check "TEESimulator global delete shows and activates the first profile, as the 
     grep -qF "if (context === 'global') this.#activeProfile = Object.keys(this.#teeConfig.profiles)[0]" "$TEE"
 check "search_bar.ts show() pushes no second 'search' history entry while the search is open" sh -c '
     grep -A3 "^  show(): void {" "$1" | grep -qF "if (!this.#searchBar.classList.contains('"'"'hide'"'"')) {"' sh "$SRC/search_bar/search_bar.ts"
+check "main_menu.ts keeps one open flag per submenu" sh -c '
+    grep -A2 "fragment.querySelectorAll('"'"'.sub-menu-entry'"'"').forEach(entry => {" "$1" | grep -qx "      let menuOpen = false" &&
+    [ "$(grep -c "^    let menuOpen = false$" "$1")" = 0 ]' sh "$SRC/main_menu/main_menu.ts"
 # a failed module download leaves no partial module.zip behind
 check "update.ts deletes the partial module.zip when the download throws" \
     sh -c 'grep -A2 "await this.#downloadFile(url, \`\${tmpDir}/module.zip\`).catch(async (error) => {" "$1" | grep -qF "await file.delete(\`\${tmpDir}/module.zip\`).catch(() => {})"' sh "$SRC/update.ts"

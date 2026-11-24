@@ -118,8 +118,9 @@ export class MainMenu {
     })
 
     // Override default behaviour
-    let menuOpen = false
     fragment.querySelectorAll('.sub-menu-entry').forEach(entry => {
+      // one flag per submenu: a shared one made a tap on the language entry close instead of open while the keybox submenu was open
+      let menuOpen = false
       const item = entry as MdMenuItem
       const menu = item.parentElement as MdSubMenu
       item.onclick = (e) => {
