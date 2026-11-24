@@ -391,6 +391,13 @@ export class ConfigTeeSimulator extends Config {
     return true
   }
 
+  // an app without a section shows the profile it will join, so saving that form keeps the profile's values
+  // (an empty form would be applied to the profile and delete its patch levels and identity fields)
+  override perAppDefault(): Policy {
+    const name = this.#hasProfile('default') ? 'default' : (Object.keys(this.#teeConfig.profiles)[0] ?? 'default')
+    return this.#profileWithMeta(name)
+  }
+
   // own profiles only: `in` also accepts inherited names such as constructor or toString
   #hasProfile(name: string): boolean {
     return Object.hasOwn(this.#teeConfig.profiles, name)

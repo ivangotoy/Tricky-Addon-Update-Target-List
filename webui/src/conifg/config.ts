@@ -176,6 +176,11 @@ export abstract class Config {
     return removed
   }
 
+  // what the per-app dialog shows for an app without a section (null: empty fields)
+  perAppDefault(): Policy | null {
+    return null
+  }
+
   get configPath(): string {
     return this.CONFIG_PATH
   }

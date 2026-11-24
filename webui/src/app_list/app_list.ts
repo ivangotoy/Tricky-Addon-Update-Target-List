@@ -503,7 +503,7 @@ export class AppList {
     const section = this.#config.get(pkg)
     const hasPolicy = typeof section === 'object' && !Array.isArray(section)
     this.#policyEditor.refreshSelects()
-    this.#policyEditor.setPolicy(hasPolicy ? section : null)
+    this.#policyEditor.setPolicy(hasPolicy ? section : this.#config.perAppDefault())
 
     dialog.show()
   }

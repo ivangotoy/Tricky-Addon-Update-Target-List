@@ -419,6 +419,12 @@ check "TEESimulator delete removes the profile the dialog shows" sh -c '
     grep -qF "if (!this.#deleteProfile(shown)) return" "$1" && grep -qF "delete this.#teeConfig.profiles[name]" "$1"' sh "$TEE"
 check "TEESimulator profile lookups use own properties (no \`in this.#teeConfig.profiles\`)" sh -c '
     [ "$(grep -c "in this\.#teeConfig\.profiles" "$1")" = 0 ] && grep -qF "return Object.hasOwn(this.#teeConfig.profiles, name)" "$1"' sh "$TEE"
+# per-app dialog for a TEESimulator app without a section shows its profile's values: saving it untouched must not apply
+# an empty form to the profile (write() applies a section that differs from its baseline)
+check "per-app dialog shows config.perAppDefault() for an app without a section; TEESimulator returns the profile's values" sh -c '
+    grep -qF "this.#policyEditor.setPolicy(hasPolicy ? section : this.#config.perAppDefault())" "$1/app_list/app_list.ts" &&
+    grep -A3 "  perAppDefault(): Policy | null {" "$1/conifg/config.ts" | grep -qx "    return null" &&
+    grep -A3 "  override perAppDefault(): Policy {" "$1/conifg/teesimulator/config_teesimulator.ts" | grep -qF "return this.#profileWithMeta(name)"' sh "$SRC"
 # a failed module download leaves no partial module.zip behind
 check "update.ts deletes the partial module.zip when the download throws" \
     sh -c 'grep -A2 "await this.#downloadFile(url, \`\${tmpDir}/module.zip\`).catch(async (error) => {" "$1" | grep -qF "await file.delete(\`\${tmpDir}/module.zip\`).catch(() => {})"' sh "$SRC/update.ts"
