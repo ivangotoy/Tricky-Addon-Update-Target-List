@@ -174,6 +174,7 @@ export class ConfigTeeSimulator extends Config {
   }
 
   override async read(): Promise<void> {
+    this.clearReadFailure()
     if (isDev()) {
       this.#teeConfig = createDefaultConfig()
       this.#teeConfig.profiles.default.apps = [
@@ -194,6 +195,7 @@ export class ConfigTeeSimulator extends Config {
           profiles,
         }
       } catch {
+        await this.readFailed(this.CONFIG_FILE)
         this.#teeConfig = createDefaultConfig()
       }
     }
@@ -227,6 +229,7 @@ export class ConfigTeeSimulator extends Config {
   }
 
   override async write(): Promise<void> {
+    this.assertWritable()
     const data = this.get()
 
     for (const [section, value] of Object.entries(data)) {

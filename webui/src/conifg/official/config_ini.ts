@@ -112,6 +112,7 @@ export class ConfigIni extends Config {
   override readonly policySchema: PolicySchema = INI_POLICY_SCHEMA
 
   override async read(): Promise<void> {
+    this.clearReadFailure()
     if (isDev()) {
       this.set({
         default_policy: { os_patch: 'no', vendor_patch: 'no', boot_patch: 'no' },
@@ -132,6 +133,7 @@ export class ConfigIni extends Config {
       const raw = await file.read(this.CONFIG_FILE)
       this.set(parseConfig(raw))
     } catch {
+      await this.readFailed(this.CONFIG_FILE)
       this.set({
         default_policy: { os_patch: 'no', vendor_patch: 'no', boot_patch: 'no' },
         target: [],
@@ -140,6 +142,7 @@ export class ConfigIni extends Config {
   }
 
   override async write(): Promise<void> {
+    this.assertWritable()
     const raw = serializeConfig(this.get())
     await file.write(this.CONFIG_FILE, raw)
   }

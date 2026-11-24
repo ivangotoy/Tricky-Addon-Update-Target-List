@@ -135,6 +135,7 @@ export class ConfigLegacy extends Config {
   override readonly policySchema: PolicySchema = LEGACY_POLICY_SCHEMA
 
   override async read(): Promise<void> {
+    this.clearReadFailure()
     const data: ConfigData = {}
 
     if (isDev()) {
@@ -149,6 +150,7 @@ export class ConfigLegacy extends Config {
         const targetRaw = await file.read(this.CONFIG_FILE)
         data.target = parseTarget(targetRaw)
       } catch {
+        await this.readFailed(this.CONFIG_FILE)
         data.target = []
       }
 
@@ -157,6 +159,7 @@ export class ConfigLegacy extends Config {
         const policy = parseSecurityPatch(spRaw)
         if (policy) data.default_policy = policy
       } catch {
+        await this.readFailed(this.SECURITY_PATCH_FILE)
         // security_patch.txt missing — leave default_policy unset
       }
 
@@ -176,6 +179,7 @@ export class ConfigLegacy extends Config {
   }
 
   override async write(): Promise<void> {
+    this.assertWritable()
     const data = this.get()
 
     for (const [pkg, value] of Object.entries(data)) {

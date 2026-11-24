@@ -427,6 +427,19 @@ check "per-app dialog shows config.perAppDefault() for an app without a section;
     grep -A3 "  override perAppDefault(): Policy {" "$1/conifg/teesimulator/config_teesimulator.ts" | grep -qF "return this.#profileWithMeta(name)"' sh "$SRC"
 check "TEESimulator write() recreates the default profile only for apps in no profile" \
     sh -c 'grep -A1 "^    if (remainingApps.size > 0) {" "$1" | grep -qF "const defaultProfile = this.#defaultProfile()"' sh "$TEE"
+# a config file that exists but cannot be read or parsed is never replaced by defaults: every backend records the failure
+# (missing or empty file = defaults), clears it on each read, and write() refuses while it is set
+CF="$SRC/conifg"
+check "config.ts: readFailed() treats missing/empty as defaults, assertWritable() refuses after a failed read" sh -c '
+    grep -qF "if ((await file.read(path)).trim() === '"'"''"'"') return" "$1" &&
+    grep -qF "if (!(await file.exist(path).catch(() => true))) return" "$1" &&
+    grep -qF "if (this.#unreadable) throw new Error(" "$1"' sh "$CF/config.ts"
+for b in official/config_ini official/config_legacy teesimulator/config_teesimulator ohmykeymint/config_ohmykeymint; do
+    case $b in */config_legacy|*/config_ohmykeymint) nf=2 ;; *) nf=1 ;; esac
+    check "$b: read() clears and records read failures ($nf), write() starts with assertWritable()" sh -c '
+        [ "$(grep -c "^    this.clearReadFailure()$" "$1")" = 1 ] && [ "$(grep -c "await this.readFailed(this\.[A-Z_]*_FILE)" "$1")" = "$2" ] &&
+        grep -A1 "^  override async write(): Promise<void> {$" "$1" | grep -qx "    this.assertWritable()"' sh "$CF/$b.ts" "$nf"
+done
 # a failed module download leaves no partial module.zip behind
 check "update.ts deletes the partial module.zip when the download throws" \
     sh -c 'grep -A2 "await this.#downloadFile(url, \`\${tmpDir}/module.zip\`).catch(async (error) => {" "$1" | grep -qF "await file.delete(\`\${tmpDir}/module.zip\`).catch(() => {})"' sh "$SRC/update.ts"

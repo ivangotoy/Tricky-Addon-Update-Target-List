@@ -72,6 +72,7 @@ export class ConfigOhMyKeyMint extends Config {
   #omkConfig: Record<string, unknown> | null = null
 
   override async read(): Promise<void> {
+    this.clearReadFailure()
     if (isDev()) {
       this.set({
         default_policy: {
@@ -95,6 +96,7 @@ export class ConfigOhMyKeyMint extends Config {
       this.#injector = parse(raw) as Record<string, unknown>
       data.target = (this.#injector.scoop as string[]) ?? []
     } catch {
+      await this.readFailed(this.INJECTOR_FILE)
       this.#injector = null
       data.target = []
     }
@@ -115,6 +117,7 @@ export class ConfigOhMyKeyMint extends Config {
         }
       }
     } catch {
+      await this.readFailed(this.CONFIG_FILE)
       this.#omkConfig = null
     }
 
@@ -126,6 +129,7 @@ export class ConfigOhMyKeyMint extends Config {
   }
 
   override async write(): Promise<void> {
+    this.assertWritable()
     const data = this.get()
 
     const injector = this.#injector ?? {}

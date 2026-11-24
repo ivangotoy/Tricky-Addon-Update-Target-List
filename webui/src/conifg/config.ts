@@ -1,3 +1,5 @@
+import { file } from '../file'
+
 export interface Policy {
   os_patch?: string
   vendor_patch?: string
@@ -100,6 +102,8 @@ export abstract class Config {
   protected readonly moduleVisible: boolean = false
 
   #data: ConfigData = {}
+  // a config file that exists but could not be read or parsed: write() refuses instead of replacing it with defaults
+  #unreadable: string | null = null
   abstract readonly policySchema: PolicySchema
 
   abstract read(): Promise<void>
@@ -174,6 +178,24 @@ export abstract class Config {
     }
 
     return removed
+  }
+
+  protected clearReadFailure(): void {
+    this.#unreadable = null
+  }
+
+  // after a failed read or parse of path: a missing or empty file means defaults, anything else blocks write()
+  protected async readFailed(path: string): Promise<void> {
+    try {
+      if ((await file.read(path)).trim() === '') return
+    } catch {
+      if (!(await file.exist(path).catch(() => true))) return
+    }
+    this.#unreadable ??= path
+  }
+
+  protected assertWritable(): void {
+    if (this.#unreadable) throw new Error(`${this.#unreadable} exists but could not be read: not overwritten`)
   }
 
   // what the per-app dialog shows for an app without a section (null: empty fields)
