@@ -147,6 +147,8 @@ export class ConfigLegacy extends Config {
   override readonly policySchema: PolicySchema = LEGACY_POLICY_SCHEMA
   // security_patch.txt from its first [package.name] header on, written back unchanged
   #packageBlocks = ''
+  // default policy as read: a save that did not change it leaves security_patch.txt (values, comments) untouched
+  #readPolicy: string | null = null
 
   override async read(): Promise<void> {
     this.clearReadFailure()
@@ -192,6 +194,7 @@ export class ConfigLegacy extends Config {
       if (appMode) data[entry.replace(/[!?]$/, '')] = { app_mode: appMode }
     }
 
+    this.#readPolicy = JSON.stringify(data.default_policy ?? null)
     this.set(data)
   }
 
@@ -215,13 +218,17 @@ export class ConfigLegacy extends Config {
       writeTasks.push(file.write(this.CONFIG_FILE, serializeTarget(data.target)))
     }
 
-    const globalPart = data.default_policy && !isNoOpPolicy(data.default_policy) ? serializeSecurityPatch(data.default_policy) : ''
-    if (globalPart || this.#packageBlocks) {
-      writeTasks.push(file.write(this.SECURITY_PATCH_FILE, [globalPart, this.#packageBlocks].filter(Boolean).join('\n\n')))
-    } else {
-      writeTasks.push(file.delete(this.SECURITY_PATCH_FILE))
+    const policyNow = JSON.stringify(data.default_policy ?? null)
+    if (policyNow !== this.#readPolicy) {
+      const globalPart = data.default_policy && !isNoOpPolicy(data.default_policy) ? serializeSecurityPatch(data.default_policy) : ''
+      if (globalPart || this.#packageBlocks) {
+        writeTasks.push(file.write(this.SECURITY_PATCH_FILE, [globalPart, this.#packageBlocks].filter(Boolean).join('\n\n')))
+      } else {
+        writeTasks.push(file.delete(this.SECURITY_PATCH_FILE))
+      }
     }
 
     await Promise.all(writeTasks)
+    this.#readPolicy = policyNow
   }
 }
