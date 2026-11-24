@@ -389,6 +389,9 @@ check "keybind.ts leaves Ctrl shortcuts to text fields (Escape still handled)" s
 check "policy dialogs show prompt_save_error when config.write() fails" sh -c '
     [ "$(cat "$1/app_list/app_list.ts" "$1/dialog/policy.ts" | grep -cF "this.#config.write().catch(() => this.#snackbar.show(i18n.t('"'"'prompt_save_error'"'"'), false))")" = 2 ]' sh "$SRC"
 check "no un-awaited, uncaught config.write() left in webui/src" [ "$(grep -rn '^ *this\.#config\.write()$' "$SRC" | wc -l)" = 0 ]
+# switching the update channel to "disable" hides an update card that is already shown (its Install would do nothing)
+check "main.ts hides the update card when the channel is disabled" \
+    sh -c 'grep -A3 "  if (channel === '"'"'disable'"'"') {" "$1" | grep -qF "updateCard.classList.add('"'"'hide'"'"')"' sh "$SRC/main.ts"
 # a failed module download leaves no partial module.zip behind
 check "update.ts deletes the partial module.zip when the download throws" \
     sh -c 'grep -A2 "await this.#downloadFile(url, \`\${tmpDir}/module.zip\`).catch(async (error) => {" "$1" | grep -qF "await file.delete(\`\${tmpDir}/module.zip\`).catch(() => {})"' sh "$SRC/update.ts"

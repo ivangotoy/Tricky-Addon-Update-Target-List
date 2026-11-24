@@ -152,6 +152,7 @@ async function checkUpdate(): Promise<void> {
   const channel = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}UpdateChannel`) || 'stable'
   if (channel === 'disable') {
     updateManager.showModule(false)
+    updateCard.classList.add('hide')
     return
   }
   try {
