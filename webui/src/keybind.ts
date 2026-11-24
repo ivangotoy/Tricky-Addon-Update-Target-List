@@ -7,7 +7,9 @@ export class Keybind {
 
   #handleKeydown(e: KeyboardEvent): void {
     const key = this.#resolveEvent(e)
-    if (key) {
+    // inside a text field Ctrl+A/D/F/S keep their editing meaning (the target is the field's inner input)
+    const editing = e.composedPath().some(t => t instanceof HTMLTextAreaElement || (t instanceof HTMLInputElement && t.type !== 'checkbox' && t.type !== 'radio'))
+    if (key && !(editing && key !== 'keybind-esc')) {
       e.preventDefault()
       e.stopPropagation()
       this.#emit(key)

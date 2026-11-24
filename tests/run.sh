@@ -381,6 +381,10 @@ check "every live remote fetch() has AbortSignal.timeout (9 in update.ts, app_li
 # target.txt entries may carry a mode suffix (pkg! / pkg?): select-from-denylist must not add a second plain line
 check "app_list.ts fetchDenyList skips packages already targeted with a suffix" \
     sh -c 'grep -A6 "async fetchDenyList(): Promise<void> {" "$1" | grep -qF "if (!target.some(t => stripSuffix(t) === pkg)) this.#config.push('"'"'target'"'"', pkg)"' sh "$SRC/app_list/app_list.ts"
+# Ctrl+A/D/F/S in the search box or a policy field must edit the text, not select/deselect every app
+check "keybind.ts leaves Ctrl shortcuts to text fields (Escape still handled)" sh -c '
+    grep -qF "const editing = e.composedPath().some(t => t instanceof HTMLTextAreaElement || (t instanceof HTMLInputElement && t.type !== '"'"'checkbox'"'"' && t.type !== '"'"'radio'"'"'))" "$1" &&
+    grep -qF "if (key && !(editing && key !== '"'"'keybind-esc'"'"')) {" "$1"' sh "$SRC/keybind.ts"
 # a failed module download leaves no partial module.zip behind
 check "update.ts deletes the partial module.zip when the download throws" \
     sh -c 'grep -A2 "await this.#downloadFile(url, \`\${tmpDir}/module.zip\`).catch(async (error) => {" "$1" | grep -qF "await file.delete(\`\${tmpDir}/module.zip\`).catch(() => {})"' sh "$SRC/update.ts"
