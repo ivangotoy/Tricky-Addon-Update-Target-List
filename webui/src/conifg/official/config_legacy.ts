@@ -14,6 +14,11 @@ function parseTarget(raw: string): string[] {
   return targets
 }
 
+// security_patch.txt values the TrickyStore readers accept: YYYYMM, YYYYMMDD or YYYY-MM-DD (YYYY/MM/DD placeholders,
+// any case), prop, no, device_default; validators that only allowed digits refused saving files using the others
+const PATCH_VALUE = /^(?:prop|no|device_default|(?:\d{4}|yyyy)-?(?:\d{2}|mm)(?:-?(?:\d{2}|dd))?)$/i
+const PATCH_VALUE_HINT = 'YYYYMM[DD] | YYYY-MM-DD | prop | no | device_default'
+
 function stripDay(value: string): string {
   return /^\d{8}$/.test(value) ? value.slice(0, 6) : value
 }
@@ -83,7 +88,7 @@ const LEGACY_POLICY_SCHEMA: PolicySchema = new PolicySchema({
     maxlength: 6,
     placeholder: 'YYYYMM',
     perAppPolicy: false,
-    validate: (v) => !v || v === 'prop' || v === 'no' || /^\d{6}$/.test(v) || 'YYYYMM | prop | no',
+    validate: (v) => !v || PATCH_VALUE.test(v) || PATCH_VALUE_HINT,
   },
   vendor_patch: {
     defaultValue: 'no',
@@ -91,7 +96,7 @@ const LEGACY_POLICY_SCHEMA: PolicySchema = new PolicySchema({
     maxlength: 8,
     placeholder: 'YYYYMMDD',
     perAppPolicy: false,
-    validate: (v) => !v || v === 'prop' || v === 'no' || /^\d{8}$/.test(v) || 'YYYYMMDD | prop | no',
+    validate: (v) => !v || PATCH_VALUE.test(v) || PATCH_VALUE_HINT,
   },
   boot_patch: {
     defaultValue: 'no',
@@ -99,7 +104,7 @@ const LEGACY_POLICY_SCHEMA: PolicySchema = new PolicySchema({
     maxlength: 8,
     placeholder: 'YYYYMMDD',
     perAppPolicy: false,
-    validate: (v) => !v || v === 'prop' || v === 'no' || /^\d{8}$/.test(v) || 'YYYYMMDD | prop | no',
+    validate: (v) => !v || PATCH_VALUE.test(v) || PATCH_VALUE_HINT,
   },
   _today: {
     type: 'button',

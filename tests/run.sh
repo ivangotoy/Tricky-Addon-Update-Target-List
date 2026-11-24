@@ -447,6 +447,12 @@ check "search_bar.ts show() pushes no second 'search' history entry while the se
 check "main_menu.ts keeps one open flag per submenu" sh -c '
     grep -A2 "fragment.querySelectorAll('"'"'.sub-menu-entry'"'"').forEach(entry => {" "$1" | grep -qx "      let menuOpen = false" &&
     [ "$(grep -c "^    let menuOpen = false$" "$1")" = 0 ]' sh "$SRC/main_menu/main_menu.ts"
+# legacy security_patch.txt validators accept the values TrickyStore readers document (dashed dates, YYYY/MM/DD
+# placeholders, device_default): with isValid() enforced, the digits-only checks refused saving such files
+LEG="$SRC/conifg/official/config_legacy.ts"
+check "config_legacy.ts patch fields use the documented security_patch.txt grammar" sh -c '
+    grep -qF "const PATCH_VALUE = /^(?:prop|no|device_default|(?:\\d{4}|yyyy)-?(?:\\d{2}|mm)(?:-?(?:\\d{2}|dd))?)\$/i" "$1" &&
+    [ "$(grep -c "validate: (v) => !v || PATCH_VALUE.test(v) || PATCH_VALUE_HINT," "$1")" = 3 ]' sh "$LEG"
 # a failed module download leaves no partial module.zip behind
 check "update.ts deletes the partial module.zip when the download throws" \
     sh -c 'grep -A2 "await this.#downloadFile(url, \`\${tmpDir}/module.zip\`).catch(async (error) => {" "$1" | grep -qF "await file.delete(\`\${tmpDir}/module.zip\`).catch(() => {})"' sh "$SRC/update.ts"
