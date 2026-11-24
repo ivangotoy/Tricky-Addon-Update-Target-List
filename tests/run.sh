@@ -453,6 +453,13 @@ LEG="$SRC/conifg/official/config_legacy.ts"
 check "config_legacy.ts patch fields use the documented security_patch.txt grammar" sh -c '
     grep -qF "const PATCH_VALUE = /^(?:prop|no|device_default|(?:\\d{4}|yyyy)-?(?:\\d{2}|mm)(?:-?(?:\\d{2}|dd))?)\$/i" "$1" &&
     [ "$(grep -c "validate: (v) => !v || PATCH_VALUE.test(v) || PATCH_VALUE_HINT," "$1")" = 3 ]' sh "$LEG"
+# backend choice: a tricky_store build with versionCode >= 246 that still uses target.txt (no config.ini) keeps the
+# target.txt + security_patch.txt backend; config.ini when it exists or on a fresh install without target.txt
+check "conifg/index.ts picks config.ini only when it exists or target.txt does not" sh -c '
+    grep -qF "case ConfigIni.support(versionCode) && await usesConfigIni():" "$1" &&
+    grep -qF "if (await file.exist('"'"'/data/adb/tricky_store/config.ini'"'"').catch(() => false)) return true" "$1" &&
+    grep -qF "return !(await file.exist('"'"'/data/adb/tricky_store/target.txt'"'"').catch(() => false))" "$1" &&
+    grep -qF "return await createConfig(await cli.getTrickyStoreInfo())" "$1"' sh "$SRC/conifg/index.ts"
 # a failed module download leaves no partial module.zip behind
 check "update.ts deletes the partial module.zip when the download throws" \
     sh -c 'grep -A2 "await this.#downloadFile(url, \`\${tmpDir}/module.zip\`).catch(async (error) => {" "$1" | grep -qF "await file.delete(\`\${tmpDir}/module.zip\`).catch(() => {})"' sh "$SRC/update.ts"
