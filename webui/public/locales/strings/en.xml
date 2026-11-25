@@ -98,7 +98,6 @@
     <string name="prompt_custom_saved">Custom keybox entry saved</string>
     <string name="prompt_custom_fetch_error">Failed to fetch keybox</string>
     <string name="prompt_custom_not_found">No custom keybox found</string>
-    <string name="prompt_keybox_repo_import_hint">Download a keybox in the browser, then set it with %s</string>
     <string name="prompt_custom_invalid_script">Script not allowed</string>
     <string name="prompt_custom_removed">Custom keybox entry removed</string>
     <string name="prompt_keybox_repo_set">Keybox set from repo successfully</string>

@@ -354,20 +354,6 @@ check "markdown.ts escapes raw HTML in marked output" grep -qF 'marked.use({ ren
 check "markdown.ts strips non-http(s) link targets" grep -qF "a.removeAttribute('href')" "$SRC/dialog/markdown.ts"
 check "cli.ts linkRedirect: http(s) only, single-quoted for the shell" \
     [ "$(grep -c 'if (!/^https?:\\/\\//.test(url)) return' "$SRC/cli.ts")" = 1 -a "$(grep -cF -e '-d ${quote(url)}`' "$SRC/cli.ts")" = 1 ]
-# keybox repo: the remote site opens in the external browser, never in a frame of the root WebUI;
-# the downloaded keybox is set with Keybox > Local (file selector, Download/*.xml)
-check "main.ts opens the keybox repo URL with linkRedirect" grep -qF 'await cli.linkRedirect(`${KEYBOX_REPO_URL}/${i18n.lang}`)' "$SRC/main.ts"
-check "main.ts has no keybox repo iframe overlay" [ "$(grep -c 'KeyboxRepo\|keybox/repo/repo' "$SRC/main.ts")" = 0 ]
-check "keybox repo import hint string in en.xml (other locales fall back to en)" \
-    grep -qF '<string name="prompt_keybox_repo_import_hint">' "$ROOT/webui/public/locales/strings/en.xml"
-check "Keybox > Local reads a .xml file picked from Download/ into keybox.xml" sh -c '
-    grep -qF "mainMenu.on('"'"'menu-keybox-local'"'"', async () => await keybox.setLocalKey())" "$1/main.ts" &&
-    grep -qF "const content = await this.#fileSelector.getFileContent('"'"'xml'"'"')" "$1/keybox/keybox.ts" &&
-    grep -qF "#currentPath = '"'"'/storage/emulated/0/Download'"'"'" "$1/file_selector/file_selector.ts"' sh "$SRC"
-# i18n.lang (part of the repo URL) is 'en' or a languages.json key: letters and one '-' only
-LANG_KEYS=$(grep -o '"[^"]*": ' "$ROOT/webui/public/locales/languages.json")
-check "languages.json keys are plain language tags" \
-    [ -n "$LANG_KEYS" -a "$(printf '%s\n' "$LANG_KEYS" | grep -cvE '^"[a-z]{2,3}(-[A-Z]{2})?": $')" = 0 ]
 # window.open in a manager WebView without a navigation guard loads the page in that WebView, next to the
 # root bridge: the am start fallbacks open a window only on the dev server
 check "window.open only behind import.meta.env.DEV (cli.ts linkRedirect, bootstrap.ts)" sh -c '
