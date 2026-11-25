@@ -1,7 +1,7 @@
 {
-  "version": "v5.0-beta.4-ci5",
-  "versionCode": 808,
-  "zipUrl": "https://git.digtvbg.com/ivangotoy/Tricky-Addon-Update-Target-List/releases/download/v5.0-beta.4-ci5/TrickyAddonModule-v5.0-beta.4-ci5.zip",
-  "changelog": "https://git.digtvbg.com/ivangotoy/Tricky-Addon-Update-Target-List/raw/commit/30f0dfe0e3c08bce4948c49b14a01592bf71a3b7/changelog.md",
-  "zipSha256": "897455d6563d1ad1cad3b467afeb00d62e16bf2361c2bacde92cc68c45e6f13c"
+  "version": "v5.0-beta.4-ci6",
+  "versionCode": 810,
+  "zipUrl": "https://git.digtvbg.com/ivangotoy/Tricky-Addon-Update-Target-List/releases/download/v5.0-beta.4-ci6/TrickyAddonModule-v5.0-beta.4-ci6.zip",
+  "changelog": "https://git.digtvbg.com/ivangotoy/Tricky-Addon-Update-Target-List/raw/commit/404e6d2489cee0bfe43180de38be683a8412477a/changelog.md",
+  "zipSha256": "49a0b3549546588ea01a5850f9e0716b53dc3b0154ede11d487708b471ef0bd7"
 }
